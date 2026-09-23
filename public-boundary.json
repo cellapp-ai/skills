@@ -1,0 +1,20 @@
+{
+  "allowedFiles": [
+    ".gitignore", "README.md", "LICENSE", "NOTICE", "CONTRIBUTING.md", "SECURITY.md",
+    "package.json", "package-lock.json", "tsconfig.json", "public-boundary.json"
+  ],
+  "allowedPrefixes": [
+    "packages/cli/", "packages/shared/", "skills/cellapp-deploy/",
+    "tests/", "contracts/", "scripts/", ".github/workflows/"
+  ],
+  "forbiddenPrefixes": [
+    "apps/server/", "infra/", "openspec/", ".agents/", "docs/operations",
+    "docs/qiniu", "docs/diagrams/", "dist/", "node_modules/", ".local/"
+  ],
+  "forbiddenFiles": ["go.mod", "go.sum", ".env", ".env.example"],
+  "sensitiveContentPatterns": [
+    "-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----",
+    "(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{30,}",
+    "AKIA[0-9A-Z]{16}"
+  ]
+}

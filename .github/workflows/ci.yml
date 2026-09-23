@@ -1,0 +1,21 @@
+name: Public client checks
+on:
+  push:
+  pull_request:
+jobs:
+  client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.12.0'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm run check:boundary
+      - run: npm run check:skill
+      - run: npm run check:package
+      - run: npx --yes skills@1.5.26 add . --list

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CellApp project association v1",
+  "type": "object",
+  "required": ["origin", "name", "output", "spa", "createRequestId"],
+  "properties": {
+    "origin": {"type": "string", "pattern": "^https://"},
+    "appId": {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+    "name": {"type": "string"},
+    "output": {"type": "string"},
+    "build": {"type": "string"},
+    "spa": {"type": "boolean"},
+    "createRequestId": {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+    "pending": {
+      "type": "object",
+      "required": ["requestId", "fingerprint", "baseVersion"],
+      "properties": {
+        "requestId": {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+        "fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "baseVersion": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

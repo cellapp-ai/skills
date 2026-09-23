@@ -1,0 +1,29 @@
+{
+  "contractVersion": "1.0.0",
+  "baseUrl": "HTTPS control origin supplied by the user",
+  "authorization": "Bearer deployment credential, except device authorization endpoints",
+  "errorEnvelope": {
+    "required": ["error", "message", "details"],
+    "properties": {"error": "stable machine code", "message": "human-readable text", "details": "object or null"}
+  },
+  "operations": [
+    {"method": "POST", "path": "/device-authorizations", "request": {}, "successStatus": 201, "responseRequired": ["deviceSecret", "userCode", "verificationUri", "interval", "expiresIn"], "errors": ["rate_limited"]},
+    {"method": "POST", "path": "/device-authorizations/poll", "requestRequired": ["deviceSecret"], "successStatus": 200, "responseRequired": ["token", "credentialId", "expiresIn"], "errors": ["authorization_pending", "slow_down", "access_denied", "expired_token", "already_claimed"]},
+    {"method": "DELETE", "path": "/credentials/current", "successStatus": 200, "responseRequired": ["revoked"], "errors": ["authorization_required"]},
+    {"method": "GET", "path": "/limits", "successStatus": 200, "responseRequired": ["files", "fileBytes", "deploymentBytes"], "errors": ["authorization_required"]},
+    {"method": "GET", "path": "/apps", "successStatus": 200, "responseType": "array", "itemRequired": ["id", "name", "activeDeployment", "suspended", "url"], "errors": ["authorization_required"]},
+    {"method": "POST", "path": "/apps", "requestRequired": ["name", "key", "requestId"], "successStatus": 201, "responseRequired": ["id", "name", "activeDeployment", "suspended", "url"], "errors": ["invalid_app", "idempotency_conflict", "app_limit", "authorization_required"]},
+    {"method": "DELETE", "path": "/apps/{app}", "successStatus": 200, "responseRequired": ["deleted"], "errors": ["app_not_found", "authorization_required"]},
+    {"method": "POST", "path": "/apps/{app}/key", "requestRequired": ["key"], "successStatus": 200, "responseRequired": ["reset"], "errors": ["invalid_key", "app_not_found", "authorization_required"]},
+    {"method": "POST", "path": "/apps/{app}/deployments", "requestRequired": ["manifest", "requestId", "baseVersion", "spa"], "successStatus": 201, "responseRequired": ["id"], "errors": ["invalid_request_id", "idempotency_conflict", "version_conflict", "storage_limit", "authorization_required"]},
+    {"method": "GET", "path": "/apps/{app}/deployments/{deployment}", "successStatus": 200, "responseRequired": ["id", "status", "manifest", "uploaded", "baseVersion", "spa", "createdAt"], "errors": ["deployment_not_found", "app_not_found", "authorization_required"]},
+    {"method": "PUT", "path": "/apps/{app}/deployments/{deployment}/files/{index}", "requestType": "binary", "successStatus": 200, "responseRequired": ["uploaded"], "errors": ["digest_mismatch", "deployment_closed", "invalid_index", "authorization_required"]},
+    {"method": "POST", "path": "/apps/{app}/deployments/{deployment}/publish", "request": {}, "successStatus": 200, "responseRequired": ["id", "url", "status"], "errors": ["incomplete_upload", "version_conflict", "deployment_closed", "authorization_required"]}
+  ],
+  "persistedFiles": {
+    "newProject": "cellapp.json",
+    "legacyProject": "ohmyapp.json",
+    "newCredentialDirectory": "~/.config/cellapp/",
+    "legacyCredentialDirectory": "~/.config/ohmyapp/"
+  }
+}
