@@ -14,10 +14,10 @@ cellapp --help
 Install the Agent Skill separately from this public GitHub repository:
 
 ```sh
-npx skills add <owner>/<repo>
+npx skills add cellapp-ai/skills
 ```
 
-Replace `<owner>/<repo>` with the repository shown on the release page. The installable Skill lives at [`skills/cellapp-deploy/SKILL.md`](skills/cellapp-deploy/SKILL.md). Installing the Skill does not install the CLI. Until the first package release, contributors can use `npm ci`, `npm run build`, and `npm run cli -- --help` from this repository.
+The installable Skill lives at [`skills/cellapp-deploy/SKILL.md`](skills/cellapp-deploy/SKILL.md). Installing the Skill does not install the CLI. Until the first package release, contributors can use `npm ci`, `npm run build`, and `npm run cli -- --help` from this repository.
 
 ## Deploy
 
