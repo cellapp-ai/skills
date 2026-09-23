@@ -5,6 +5,7 @@ import { Client, randomKey, readJSON, saveJSON } from './client.js';
 import { deploy, type Project } from './deploy.js';
 import { AppError } from '../../shared/src/errors.js';
 import { readProject } from './project.js';
+import { selectOrigin } from './origin.js';
 
 const {values, positionals} = parseArgs({allowPositionals: true, options: {
   origin: {type: 'string'}, project: {type: 'string', default: '.'}, output: {type: 'string'},
@@ -20,7 +21,7 @@ try {
     const projectPath = resolve(values.project);
     const newProject = await readJSON<Project>(join(projectPath, 'cellapp.json'));
     const legacyProject = await readJSON<Project>(join(projectPath, 'ohmyapp.json'));
-    const origin = values.origin ?? newProject?.origin ?? process.env.CELLAPP_ORIGIN ?? legacyProject?.origin ?? process.env.OHMYAPP_ORIGIN;
+    const origin = selectOrigin(values.origin, newProject, legacyProject, process.env);
     if (!origin) throw new Error('Specify --origin or CELLAPP_ORIGIN');
     const project = await readProject(projectPath);
     const client = new Client(origin, values['config-dir']);
