@@ -7,7 +7,7 @@ CellApp publishes static HTML applications from a local project. The CLI builds 
 Requires Node.js 22.12 or later. Install the CLI from the published CellApp package when available:
 
 ```sh
-npm install -g cellapp
+npm install -g @cellapp/cli
 cellapp --help
 ```
 

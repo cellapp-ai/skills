@@ -1,9 +1,10 @@
 {
-  "name": "cellapp",
+  "name": "@cellapp/cli",
   "version": "0.1.0",
   "description": "CellApp static application deployment CLI and Agent Skill",
   "type": "module",
   "license": "MIT",
+  "publishConfig": {"access": "public", "registry": "https://registry.npmjs.org/"},
   "workspaces": ["packages/cli", "packages/shared"],
   "engines": {"node": ">=22.12.0"},
   "bin": {"cellapp": "dist/packages/cli/src/main.js", "ohmyapp": "dist/packages/cli/src/main.js"},

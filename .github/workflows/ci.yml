@@ -22,6 +22,6 @@ jobs:
         run: |
           archive="$(npm pack --pack-destination "$RUNNER_TEMP" --silent)"
           npm install --prefix "$RUNNER_TEMP/cellapp-smoke" --ignore-scripts "$RUNNER_TEMP/$archive"
-          node "$RUNNER_TEMP/cellapp-smoke/node_modules/cellapp/dist/packages/cli/src/main.js" --help
-          cmp skills/cellapp-deploy/SKILL.md "$RUNNER_TEMP/cellapp-smoke/node_modules/cellapp/skills/cellapp-deploy/SKILL.md"
+          node "$RUNNER_TEMP/cellapp-smoke/node_modules/@cellapp/cli/dist/packages/cli/src/main.js" --help
+          cmp skills/cellapp-deploy/SKILL.md "$RUNNER_TEMP/cellapp-smoke/node_modules/@cellapp/cli/skills/cellapp-deploy/SKILL.md"
       - run: npx --yes skills@1.5.26 add . --list

@@ -1,5 +1,5 @@
 {
-  "name": "@cellapp/cli",
+  "name": "@cellapp/cli-source",
   "version": "0.1.0",
   "private": true,
   "type": "module"
