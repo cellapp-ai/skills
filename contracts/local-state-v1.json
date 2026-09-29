@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "CellApp project association v1",
+  "title": "Cellapp project association v1",
   "type": "object",
   "required": ["origin", "name", "output", "spa", "createRequestId"],
   "properties": {

@@ -11,4 +11,4 @@ for (const path of paths) {
     throw new Error(`Private path in package: ${path}`);
   }
 }
-process.stdout.write(`CellApp package contains ${paths.length} approved files.\n`);
+process.stdout.write(`Cellapp package contains ${paths.length} approved files.\n`);

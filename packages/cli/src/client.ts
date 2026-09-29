@@ -50,7 +50,7 @@ export class Client {
     try { await saveJSONExclusive(this.credentialFile, legacy, true); }
     catch (e) { if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e; }
     const migrated = await readJSON<{token: string}>(this.credentialFile);
-    if (migrated?.token !== legacy.token) throw new Error('CellApp credential conflicts with legacy credential; resolve the files manually');
+    if (migrated?.token !== legacy.token) throw new Error('Cellapp credential conflicts with legacy credential; resolve the files manually');
     this.token = migrated.token;
   }
   async request<T>(path: string, method = 'GET', body?: unknown, binary = false): Promise<T> {

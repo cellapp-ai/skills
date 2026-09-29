@@ -1,10 +1,10 @@
-# CellApp CLI and Agent Skill
+# Cellapp CLI and Agent Skill
 
-CellApp publishes static HTML applications from a local project. The CLI builds and uploads only the chosen static output directory. The Agent Skill guides an AI agent through the same process. A CellApp control service URL is required; the Skill does not supply one.
+Cellapp publishes static HTML applications from a local project. The CLI builds and uploads only the chosen static output directory. The Agent Skill guides an AI agent through the same process. A Cellapp control service URL is required; the Skill does not supply one.
 
 ## Install
 
-Requires Node.js 22.12 or later. Install the CLI from the published CellApp package when available:
+Requires Node.js 22.12 or later. Install the CLI from the published Cellapp package when available:
 
 ```sh
 npm install -g @cellapp/cli

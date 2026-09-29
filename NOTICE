@@ -1,3 +1,3 @@
-CellApp CLI and Agent Skill were initially extracted from the private CellApp
+Cellapp CLI and Agent Skill were initially extracted from the private Cellapp
 monorepo at commit 018274858c6435f01e1a8dc10c88b4f679b8c4c3. The public
 repository starts with a new history to avoid publishing private material.

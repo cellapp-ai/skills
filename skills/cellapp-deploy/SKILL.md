@@ -1,11 +1,11 @@
 ---
 name: cellapp-deploy
-description: Publish or update a static HTML site or frontend tool on CellApp using local builds, device authorization, and an app-specific share key. Use when the user asks to deploy to CellApp; does not host backends or synchronize app data.
+description: Publish or update a static HTML site or frontend tool on Cellapp using local builds, device authorization, and an app-specific share key. Use when the user asks to deploy to Cellapp; does not host backends or synchronize app data.
 ---
 
 # Deploy a static application
 
-Use the installed `cellapp` CLI. Installing this Skill does not install the CLI; if it is unavailable, tell the user to install the CellApp CLI using the public repository README. Do not substitute another hosting provider or invent a control URL. The control origin comes from the user's configuration, `CELLAPP_ORIGIN`, or an existing `cellapp.json`. Existing `ohmyapp.json` and `OHMYAPP_ORIGIN` are supported during migration.
+Use the installed `cellapp` CLI. Installing this Skill does not install the CLI; if it is unavailable, tell the user to install the Cellapp CLI using the public repository README. Do not substitute another hosting provider or invent a control URL. The control origin comes from the user's configuration, `CELLAPP_ORIGIN`, or an existing `cellapp.json`. Existing `ohmyapp.json` and `OHMYAPP_ORIGIN` are supported during migration.
 
 Inspect the project's existing build command and static output directory. Reuse `cellapp.json` for updates. For a plain HTML directory, omit the build command. If the output directory or build command is ambiguous, ask only for the missing setting. A backend, SSR server, secret-dependent API, or database cannot be deployed with this skill; explain the static-export requirement before attempting publication.
 

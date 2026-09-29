@@ -1,7 +1,7 @@
 {
   "name": "@cellapp/cli",
   "version": "0.1.0",
-  "description": "CellApp static application deployment CLI and Agent Skill",
+  "description": "Cellapp static application deployment CLI and Agent Skill",
   "type": "module",
   "license": "MIT",
   "publishConfig": {"access": "public", "registry": "https://registry.npmjs.org/"},

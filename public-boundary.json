@@ -1,6 +1,6 @@
 {
   "allowedFiles": [
-    ".gitignore", "README.md", "LICENSE", "NOTICE", "CONTRIBUTING.md", "SECURITY.md",
+    "AGENTS.md", ".gitignore", "README.md", "LICENSE", "NOTICE", "CONTRIBUTING.md", "SECURITY.md",
     "package.json", "package-lock.json", "tsconfig.json", "public-boundary.json"
   ],
   "allowedPrefixes": [
