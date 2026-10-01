@@ -97,6 +97,6 @@ export async function deploy(client: Client, directory: string, options: {output
   const result = await client.request<{url: string; id: string; status: string}>(`${base}/${d.id}/publish`, 'POST', {});
   delete project.pending;
   await saveJSON(configPath, project);
-  notify('发布成功；浏览器本地数据不会跨设备同步。');
+  notify('发布成功；浏览器本地数据不会跨设备同步。可用 cellapp data 绑定自有 Supabase。');
   return {...result, ...(initialKey ? {shareKey: initialKey} : {keyUnchanged: true})};
 }

@@ -4,19 +4,21 @@ import { resolve, join } from 'node:path';
 import { Client, randomKey, readJSON, saveJSON } from './client.js';
 import { deploy, type Project } from './deploy.js';
 import { AppError } from '../../shared/src/errors.js';
+import { publicSupabaseData } from '../../shared/src/data.js';
 import { readProject } from './project.js';
 import { selectOrigin } from './origin.js';
 
 const {values, positionals} = parseArgs({allowPositionals: true, options: {
   origin: {type: 'string'}, project: {type: 'string', default: '.'}, output: {type: 'string'},
   build: {type: 'string'}, name: {type: 'string'}, spa: {type: 'boolean'}, help: {type: 'boolean'},
-  'config-dir': {type: 'string'},
+  'config-dir': {type: 'string'}, provider: {type: 'string'}, url: {type: 'string'},
+  'anon-key': {type: 'string'}, clear: {type: 'boolean'},
 }});
 const [command, appId] = positionals;
 const notify = (s: string) => process.stderr.write(s + '\n');
 try {
   if (values.help || !command) {
-    process.stdout.write('cellapp <login|logout|deploy|apps|link|reset-key|delete> [app-id] --origin https://control.example\nDeploy: --project . --output dist [--build "npm run build"] [--spa]\n');
+    process.stdout.write('cellapp <login|logout|deploy|apps|link|reset-key|delete|data> [app-id] --origin https://control.example\nDeploy: --project . --output dist [--build "npm run build"] [--spa]\nData: --provider supabase --url https://PROJECT.supabase.co --anon-key KEY | --clear\n');
   } else {
     const projectPath = resolve(values.project);
     const newProject = await readJSON<Project>(join(projectPath, 'cellapp.json'));
@@ -42,6 +44,19 @@ try {
           if (!apps.some(a => a.id === appId)) throw new Error('Application not owned by this credential');
           if (!project) throw new Error('Create project metadata with a deployment before linking');
           project.appId = appId; delete project.pending; await saveJSON(join(projectPath, 'cellapp.json'), project); result = {linked: appId};
+        } else if (command === 'data') {
+          if (values.clear && (values.provider || values.url || values['anon-key'])) throw new Error('Use --clear without other data flags');
+          if (values.clear) result = await client.request(`/apps/${appId}/data`, 'DELETE');
+          else if (values.provider || values.url || values['anon-key']) {
+            const data = publicSupabaseData({provider: values.provider ?? '', url: values.url ?? '', anonKey: values['anon-key'] ?? ''});
+            result = await client.request(`/apps/${appId}/data`, 'PUT', data);
+          } else {
+            try { result = await client.request(`/apps/${appId}/data`); }
+            catch (error) {
+              if (error instanceof AppError && error.code === 'data_not_configured') result = {configured: false};
+              else throw error;
+            }
+          }
         } else throw new Error('Unknown command; use --help');
       }
       process.stdout.write(JSON.stringify(result, null, 2) + '\n');

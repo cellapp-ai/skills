@@ -1,5 +1,5 @@
 {
-  "contractVersion": "1.0.0",
+  "contractVersion": "1.1.0",
   "baseUrl": "HTTPS control origin supplied by the user",
   "authorization": "Bearer deployment credential, except device authorization endpoints",
   "errorEnvelope": {
@@ -15,6 +15,9 @@
     {"method": "POST", "path": "/apps", "requestRequired": ["name", "key", "requestId"], "successStatus": 201, "responseRequired": ["id", "name", "activeDeployment", "suspended", "url"], "errors": ["invalid_app", "idempotency_conflict", "app_limit", "authorization_required"]},
     {"method": "DELETE", "path": "/apps/{app}", "successStatus": 200, "responseRequired": ["deleted"], "errors": ["app_not_found", "authorization_required"]},
     {"method": "POST", "path": "/apps/{app}/key", "requestRequired": ["key"], "successStatus": 200, "responseRequired": ["reset"], "errors": ["invalid_key", "app_not_found", "authorization_required"]},
+    {"method": "GET", "path": "/apps/{app}/data", "successStatus": 200, "responseRequired": ["provider", "url", "anonKey", "dataset"], "errors": ["data_not_configured", "invalid_data", "app_not_found", "authorization_required"]},
+    {"method": "PUT", "path": "/apps/{app}/data", "requestRequired": ["provider", "url", "anonKey"], "successStatus": 200, "responseRequired": ["provider", "url", "anonKey", "dataset"], "errors": ["invalid_data", "app_not_found", "authorization_required"]},
+    {"method": "DELETE", "path": "/apps/{app}/data", "successStatus": 200, "responseRequired": ["cleared"], "errors": ["app_not_found", "authorization_required"]},
     {"method": "POST", "path": "/apps/{app}/deployments", "requestRequired": ["manifest", "requestId", "baseVersion", "spa"], "successStatus": 201, "responseRequired": ["id"], "errors": ["invalid_request_id", "idempotency_conflict", "version_conflict", "storage_limit", "authorization_required"]},
     {"method": "GET", "path": "/apps/{app}/deployments/{deployment}", "successStatus": 200, "responseRequired": ["id", "status", "manifest", "uploaded", "baseVersion", "spa", "createdAt"], "errors": ["deployment_not_found", "app_not_found", "authorization_required"]},
     {"method": "PUT", "path": "/apps/{app}/deployments/{deployment}/files/{index}", "requestType": "binary", "successStatus": 200, "responseRequired": ["uploaded"], "errors": ["digest_mismatch", "deployment_closed", "invalid_index", "authorization_required"]},

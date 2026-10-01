@@ -30,7 +30,8 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
     const operation = operationFor(method, path);
     assert.ok(operation, `missing public contract: ${method} ${path}`);
     seen.add(`${method} ${operation.path}`);
-    const body = init?.body && method !== 'PUT' ? JSON.parse(String(init.body)) as Record<string, unknown> : {};
+    const isFileUpload = method === 'PUT' && /\/files\/\d+$/.test(path);
+    const body = init?.body && !isFileUpload ? JSON.parse(String(init.body)) as Record<string, unknown> : {};
     let data: unknown;
     if (path === '/device-authorizations') data = {deviceSecret: 'secret', userCode: 'CODE', verificationUri: 'https://control.example/device', interval: 0, expiresIn: 10};
     else if (path === '/device-authorizations/poll') data = {token: 'credential', credentialId: 'c'.repeat(32), expiresIn: 100};
@@ -40,7 +41,10 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
     else if (path === '/apps' && method === 'POST') {
       app = {id: appId, name: String(body.name), url: `https://${appId}.apps.example`, activeDeployment: null, suspended: false};
       data = app;
-    } else if (path === `/apps/${appId}/key`) data = {reset: true};
+    }     else if (path === `/apps/${appId}/key`) data = {reset: true};
+    else if (path === `/apps/${appId}/data` && method === 'PUT') data = {provider: 'supabase', url: String(body.url), anonKey: String(body.anonKey), dataset: 'shared'};
+    else if (path === `/apps/${appId}/data` && method === 'DELETE') data = {cleared: true};
+    else if (path === `/apps/${appId}/data`) data = {provider: 'supabase', url: 'https://demo.supabase.co', anonKey: 'anon', dataset: 'shared'};
     else if (path === `/apps/${appId}`) { app = undefined; data = {deleted: true}; }
     else if (path === `/apps/${appId}/deployments` && method === 'POST') {
       const requestId = String(body.requestId);
@@ -92,6 +96,9 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
     assert.equal(retry.status, 'published');
     assert.equal(retry.url, first.url);
     assert.equal(deploymentNumber, 2);
+    assert.deepEqual(await client.request(`/apps/${appId}/data`, 'PUT', {provider: 'supabase', url: 'https://demo.supabase.co', anonKey: 'anon'}), {provider: 'supabase', url: 'https://demo.supabase.co', anonKey: 'anon', dataset: 'shared'});
+    assert.equal((await client.request<{dataset: string}>(`/apps/${appId}/data`)).dataset, 'shared');
+    assert.deepEqual(await client.request(`/apps/${appId}/data`, 'DELETE'), {cleared: true});
     assert.deepEqual(await client.request(`/apps/${appId}/key`, 'POST', {key: 'f'.repeat(64)}), {reset: true});
     assert.deepEqual(await client.request(`/apps/${appId}`, 'DELETE'), {deleted: true});
     await client.logout();

@@ -31,7 +31,13 @@ Plain HTML directories do not need `--build`. Use `--spa` only if the site has c
 
 An existing `ohmyapp.json` and matching `~/.config/ohmyapp/` credential are copied safely on first use. The old files remain for recovery. `OHMYAPP_ORIGIN` and the `ohmyapp` command alias are supported during the transition; use `CELLAPP_ORIGIN` and `cellapp` for new setups.
 
-The service hosts static content only. Frontend code and bundled values are readable by authorized visitors; never include private API credentials. Browser local data is not synchronized between devices.
+The service hosts static content only and does not run user backends. Frontend code and bundled values are readable by authorized visitors; never include private API credentials or a service role key. Browser local data is not synchronized between devices. To let visitors share data, bind an owner-owned Supabase project after deploy:
+
+```sh
+cellapp data <app-id> --provider supabase --url https://PROJECT.supabase.co --anon-key <anon-or-publishable-key>
+```
+
+Authorized visitors can then `GET /_hosting/data` on the app origin and call Supabase from the browser. All visitors of that app share one dataset. Use `--clear` to remove the binding.
 
 ## Development
 
