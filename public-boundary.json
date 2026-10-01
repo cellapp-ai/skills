@@ -9,7 +9,7 @@
   ],
   "forbiddenPrefixes": [
     "apps/server/", "infra/", "openspec/", ".agents/", "docs/operations",
-    "docs/qiniu", "docs/diagrams/", "dist/", "node_modules/", ".local/"
+    "docs/", "dist/", "node_modules/", ".local/"
   ],
   "forbiddenFiles": ["go.mod", "go.sum", ".env", ".env.example"],
   "sensitiveContentPatterns": [
