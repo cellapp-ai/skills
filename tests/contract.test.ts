@@ -41,7 +41,7 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
     else if (path === '/apps' && method === 'POST') {
       assert.equal(body.namespace, 'demo');
       assert.equal(body.slug, 'test');
-      app = {id: appId, name: String(body.name), namespace: 'demo', slug: 'test', aliasUrl: 'https://control.example/a/demo/test', url: `https://${appId}.apps.example`, activeDeployment: null, suspended: false, visibility: 'restricted', dataState: 'ready'};
+      app = {id: appId, name: String(body.name), namespace: 'demo', slug: 'test', aliasUrl: 'https://control.example/a/demo/test', url: 'https://test-demo.apps.example', activeDeployment: null, suspended: false, visibility: 'restricted', dataState: 'ready'};
       data = app;
     } else if (path === `/apps/${appId}/data`) data = {state: 'ready', version: 1, digest: 'f'.repeat(64)};
     else if (path === `/apps/${appId}/data/verify`) data = {ready: true, version: 1, digest: 'f'.repeat(64)};

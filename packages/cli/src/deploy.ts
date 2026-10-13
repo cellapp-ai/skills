@@ -49,7 +49,7 @@ export async function deploy(client: Client, directory: string, options: {output
   let project = await readProject(projectPath);
   if (project && project.origin !== client.origin) throw new Error('Project belongs to another control origin');
   if (project?.appId && (options.namespace !== undefined || options.slug !== undefined)) {
-    throw new Error('Namespace and app alias are set only when creating an application');
+    throw new Error('CLI slugs are set only when creating an application; change existing slugs in the owner console');
   }
   const output = options.output ?? project?.output;
   ensure(output, 400, 'output_required', 'Specify --output with the static build directory');

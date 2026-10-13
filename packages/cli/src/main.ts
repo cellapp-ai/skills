@@ -18,7 +18,7 @@ const [command, appId, dataAppId] = positionals;
 const notify = (s: string) => process.stderr.write(s + '\n');
 try {
   if (values.help || !command) {
-    process.stdout.write('cellapp <login|logout|deploy|apps|link|reset-key|delete|data> [app-id] [--origin https://console.cellapp.ai]\nDeploy: --project . --output dist [--build "npm run build"] [--namespace handle] [--slug alias] [--spa]\nData: data <plan|apply|status|verify> [app-id] --project . [--manifest cellapp.data.json] [--allow-destructive]\nDefault origin: https://console.cellapp.ai\n');
+    process.stdout.write('cellapp <login|logout|deploy|apps|link|reset-key|delete|data> [app-id] [--origin https://console.cellapp.ai]\nDeploy: --project . --output dist [--build "npm run build"] [--namespace user-slug] [--slug app-slug] [--spa]\nData: data <plan|apply|status|verify> [app-id] --project . [--manifest cellapp.data.json] [--allow-destructive]\nDefault origin: https://console.cellapp.ai\n');
   } else {
     const projectPath = resolve(values.project);
     const newProject = await readJSON<Project>(join(projectPath, 'cellapp.json'));
