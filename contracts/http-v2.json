@@ -1,0 +1,386 @@
+{
+  "contractVersion": "2.0.0",
+  "baseUrl": "HTTPS control origin supplied by the user",
+  "authorization": "Bearer deployment credential, except device authorization endpoints",
+  "errorEnvelope": {
+    "required": [
+      "error",
+      "message",
+      "details"
+    ],
+    "properties": {
+      "error": "stable machine code",
+      "message": "human-readable text",
+      "details": "object or null"
+    }
+  },
+  "operations": [
+    {
+      "method": "POST",
+      "path": "/device-authorizations",
+      "request": {},
+      "successStatus": 201,
+      "responseRequired": [
+        "deviceSecret",
+        "userCode",
+        "verificationUri",
+        "interval",
+        "expiresIn"
+      ],
+      "errors": [
+        "rate_limited"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/device-authorizations/poll",
+      "requestRequired": [
+        "deviceSecret"
+      ],
+      "successStatus": 200,
+      "responseRequired": [
+        "token",
+        "credentialId",
+        "expiresIn"
+      ],
+      "errors": [
+        "authorization_pending",
+        "slow_down",
+        "access_denied",
+        "expired_token",
+        "already_claimed"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/credentials/current",
+      "successStatus": 200,
+      "responseRequired": [
+        "revoked"
+      ],
+      "errors": [
+        "authorization_required"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/limits",
+      "successStatus": 200,
+      "responseRequired": [
+        "files",
+        "fileBytes",
+        "deploymentBytes"
+      ],
+      "errors": [
+        "authorization_required"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/apps",
+      "successStatus": 200,
+      "responseType": "array",
+      "itemRequired": [
+        "id",
+        "name",
+        "activeDeployment",
+        "suspended",
+        "url",
+        "visibility",
+        "dataState",
+        "namespace",
+        "slug",
+        "aliasUrl"
+      ],
+      "errors": [
+        "authorization_required"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/apps",
+      "requestRequired": [
+        "name",
+        "key",
+        "requestId"
+      ],
+      "successStatus": 201,
+      "responseRequired": [
+        "id",
+        "name",
+        "activeDeployment",
+        "suspended",
+        "url",
+        "visibility",
+        "dataState",
+        "namespace",
+        "slug",
+        "aliasUrl"
+      ],
+      "errors": [
+        "invalid_app",
+        "idempotency_conflict",
+        "app_limit",
+        "authorization_required",
+        "invalid_namespace",
+        "namespace_taken",
+        "namespace_mismatch",
+        "invalid_slug",
+        "slug_taken"
+      ],
+      "requestOptional": [
+        "namespace",
+        "slug"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/apps/{app}",
+      "successStatus": 200,
+      "responseRequired": [
+        "deleted"
+      ],
+      "errors": [
+        "app_not_found",
+        "authorization_required"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/apps/{app}/key",
+      "requestRequired": [
+        "key"
+      ],
+      "successStatus": 200,
+      "responseRequired": [
+        "reset"
+      ],
+      "errors": [
+        "invalid_key",
+        "app_not_found",
+        "authorization_required"
+      ],
+      "semantics": "Rotates future access-key redemption only; existing user grants remain active."
+    },
+    {
+      "method": "POST",
+      "path": "/apps/{app}/deployments",
+      "requestRequired": [
+        "manifest",
+        "requestId",
+        "baseVersion",
+        "spa"
+      ],
+      "successStatus": 201,
+      "responseRequired": [
+        "id"
+      ],
+      "errors": [
+        "invalid_request_id",
+        "idempotency_conflict",
+        "version_conflict",
+        "storage_limit",
+        "authorization_required"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/apps/{app}/deployments/{deployment}",
+      "successStatus": 200,
+      "responseRequired": [
+        "id",
+        "status",
+        "manifest",
+        "uploaded",
+        "baseVersion",
+        "spa",
+        "createdAt"
+      ],
+      "errors": [
+        "deployment_not_found",
+        "app_not_found",
+        "authorization_required"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/apps/{app}/deployments/{deployment}/files/{index}",
+      "requestType": "binary",
+      "successStatus": 200,
+      "responseRequired": [
+        "uploaded"
+      ],
+      "errors": [
+        "digest_mismatch",
+        "deployment_closed",
+        "invalid_index",
+        "authorization_required"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/apps/{app}/deployments/{deployment}/publish",
+      "request": {},
+      "successStatus": 200,
+      "responseRequired": [
+        "id",
+        "url",
+        "status"
+      ],
+      "errors": [
+        "incomplete_upload",
+        "version_conflict",
+        "deployment_closed",
+        "authorization_required"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/apps/{app}/data",
+      "successStatus": 200,
+      "responseRequired": [
+        "state",
+        "version",
+        "digest"
+      ],
+      "errors": [
+        "app_not_found",
+        "app_data_unavailable",
+        "authorization_required"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/apps/{app}/data/plan",
+      "requestRequired": [
+        "version",
+        "tables"
+      ],
+      "successStatus": 200,
+      "responseRequired": [
+        "version",
+        "digest",
+        "operations",
+        "requiresDestructive",
+        "alreadyApplied"
+      ],
+      "errors": [
+        "invalid_manifest",
+        "app_data_not_ready",
+        "app_not_found",
+        "authorization_required"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/apps/{app}/data/apply",
+      "requestRequired": [
+        "version",
+        "tables"
+      ],
+      "successStatus": 200,
+      "responseRequired": [
+        "version",
+        "digest",
+        "operations",
+        "requiresDestructive",
+        "alreadyApplied"
+      ],
+      "errors": [
+        "data_apply_failed",
+        "data_api_not_ready",
+        "app_data_not_ready",
+        "app_not_found",
+        "authorization_required"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/apps/{app}/data/verify",
+      "successStatus": 200,
+      "responseRequired": [
+        "ready",
+        "version",
+        "digest"
+      ],
+      "errors": [
+        "data_api_not_ready",
+        "app_data_not_ready",
+        "app_not_found",
+        "authorization_required"
+      ]
+    }
+  ],
+  "persistedFiles": {
+    "newProject": "cellapp.json",
+    "legacyProject": "ohmyapp.json",
+    "newCredentialDirectory": "~/.config/cellapp/",
+    "legacyCredentialDirectory": "~/.config/ohmyapp/"
+  },
+  "accessSemantics": "Visitors sign in to Cellapp. Restricted apps require a user-bound grant from owner approval or access-key redemption. Key rotation stops new redemption and preserves existing grants; anonymous key cookies no longer authorize access.",
+  "appHost": {
+    "currentUser": {
+      "method": "GET",
+      "path": "/_cellapp/me",
+      "responseRequired": [
+        "id",
+        "access"
+      ],
+      "description": "Stable random ID scoped to this application; no global user ID or provider subject.",
+      "errorCodes": [
+        "login_required",
+        "access_required",
+        "access_pending",
+        "access_denied"
+      ]
+    },
+    "data": {
+      "path": "/rest/v1/{table}",
+      "methods": [
+        "GET",
+        "HEAD",
+        "POST",
+        "PATCH",
+        "DELETE"
+      ],
+      "description": "PostgREST table-only subset behind mandatory app login, admission and per-table RLS. Client apikey is a non-secret publishable identifier and does not authorize."
+    },
+    "unsupported": [
+      "Supabase Auth",
+      "Realtime",
+      "Storage",
+      "RPC",
+      "custom application server",
+      "direct PostgreSQL"
+    ],
+    "unsupportedError": {
+      "status": 501,
+      "code": "unsupported_feature",
+      "paths": [
+        "/auth/v1",
+        "/storage/v1",
+        "/functions/v1",
+        "/realtime/v1",
+        "/rest/v1/rpc"
+      ]
+    }
+  },
+  "dataManifest": {
+    "defaultFile": "cellapp.data.json",
+    "versioning": "First version is 1, then increase by exactly one; identical retry is idempotent, changed same version conflicts.",
+    "types": [
+      "text",
+      "uuid",
+      "bigint",
+      "boolean",
+      "timestamptz",
+      "jsonb"
+    ],
+    "policyModes": [
+      "none",
+      "all-admitted-users",
+      "own-rows"
+    ],
+    "destructiveFlag": "allowDestructive must be true in the manifest and --allow-destructive must be supplied to CLI apply after plan review."
+  }
+}

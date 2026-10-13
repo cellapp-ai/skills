@@ -6,17 +6,19 @@ import { deploy, type Project } from './deploy.js';
 import { AppError } from '../../shared/src/errors.js';
 import { readProject } from './project.js';
 import { selectOrigin } from './origin.js';
+import { runData } from './data.js';
 
 const {values, positionals} = parseArgs({allowPositionals: true, options: {
   origin: {type: 'string'}, project: {type: 'string', default: '.'}, output: {type: 'string'},
-  build: {type: 'string'}, name: {type: 'string'}, spa: {type: 'boolean'}, help: {type: 'boolean'},
+  build: {type: 'string'}, name: {type: 'string'}, namespace: {type: 'string'}, slug: {type: 'string'}, spa: {type: 'boolean'}, help: {type: 'boolean'},
   'config-dir': {type: 'string'},
+  manifest: {type: 'string'}, 'allow-destructive': {type: 'boolean'},
 }});
-const [command, appId] = positionals;
+const [command, appId, dataAppId] = positionals;
 const notify = (s: string) => process.stderr.write(s + '\n');
 try {
   if (values.help || !command) {
-    process.stdout.write('cellapp <login|logout|deploy|apps|link|reset-key|delete> [app-id] --origin https://control.example\nDeploy: --project . --output dist [--build "npm run build"] [--spa]\n');
+    process.stdout.write('cellapp <login|logout|deploy|apps|link|reset-key|delete|data> [app-id] --origin https://control.example\nDeploy: --project . --output dist [--build "npm run build"] [--namespace handle] [--slug alias] [--spa]\nData: data <plan|apply|status|verify> [app-id] --project . [--manifest cellapp.data.json] [--allow-destructive]\n');
   } else {
     const projectPath = resolve(values.project);
     const newProject = await readJSON<Project>(join(projectPath, 'cellapp.json'));
@@ -33,9 +35,10 @@ try {
       let result: unknown;
       if (command === 'deploy') result = await deploy(client, projectPath, values, notify);
       else if (command === 'apps') result = await client.request('/apps');
+      else if (command === 'data') result = await runData(client, appId, projectPath, project, dataAppId, values.manifest, values['allow-destructive']);
       else {
         if (!appId || !/^[a-f0-9]{32}$/.test(appId)) throw new Error('A valid app ID is required');
-        if (command === 'reset-key') { const key = randomKey(); await client.request(`/apps/${appId}/key`, 'POST', {key}); result = {shareKey: key}; }
+        if (command === 'reset-key') { const key = randomKey(); await client.request(`/apps/${appId}/key`, 'POST', {key}); result = {accessKey: key}; }
         else if (command === 'delete') result = await client.request(`/apps/${appId}`, 'DELETE');
         else if (command === 'link') {
           const apps = await client.request<{id: string}[]>('/apps');

@@ -1,22 +1,47 @@
 ---
 name: cellapp-deploy
-description: Publish or update a static HTML site or frontend tool on Cellapp using local builds, device authorization, and an app-specific share key. Use when the user asks to deploy to Cellapp; does not host backends or synchronize app data.
+description: Build and publish a static Cellapp frontend, manage its PostgreSQL tables and row policies, and connect supported supabase-js CRUD without an application backend.
 ---
 
-# Deploy a static application
+# Develop and deploy a Cellapp application
 
-Use the installed `cellapp` CLI. Installing this Skill does not install the CLI; if it is unavailable, tell the user to install the Cellapp CLI using the public repository README. Do not substitute another hosting provider or invent a control URL. The control origin comes from the user's configuration, `CELLAPP_ORIGIN`, or an existing `cellapp.json`. Existing `ohmyapp.json` and `OHMYAPP_ORIGIN` are supported during migration.
+Use the installed `cellapp` CLI. Installing this Skill does not install the CLI; if it is unavailable, direct the user to the public repository README. Use the configured `CELLAPP_ORIGIN`, existing `cellapp.json`, or an origin supplied by the user. Preserve `ohmyapp.json` and `OHMYAPP_ORIGIN` migration behavior. Never invent an origin or store a credential in the project.
 
-Inspect the project's existing build command and static output directory. Reuse `cellapp.json` for updates. For a plain HTML directory, omit the build command. If the output directory or build command is ambiguous, ask only for the missing setting. A backend, SSR server, secret-dependent API, or database cannot be deployed with this skill; explain the static-export requirement before attempting publication.
+## Inspect
 
-Run `cellapp deploy --project <project> --output <output-directory> --build <existing-build-command> --origin <control-origin>`, omitting `--build` for plain HTML. Add `--spa` only when client-side page routing requires index fallback. Quote all paths and commands for the shell in use. Run user project builds under the agent's normal execution permissions.
+Read `cellapp.json`, the existing build command, static output directory, and `cellapp.data.json` if present. Reuse the application association on updates. For plain HTML omit the build command. Ask only for an ambiguous output or build setting. Cellapp hosts static frontend code; do not deploy SSR, a custom server, private service key, direct PostgreSQL credential, or arbitrary SQL. Bundled frontend values are readable by admitted visitors.
 
-The CLI starts device authorization automatically when no credential exists. Show the user the verification link and matching code, and keep the command running while they approve in a browser. Do not request account passwords or copy the deployment token into the conversation. Authorization denial/expiry stops the flow; let the user initiate another attempt.
+## Choose an application reference
 
-Only report deployment success after the CLI returns `status: published`. Return the application URL and the initial app-specific share key to the requesting owner. For updates, report that the existing share key remains valid. Never put a key into a URL, repository, issue, or unrelated message. The key grants access to the application; it grants no management permissions.
+The display name may repeat. Every owner has one public namespace, and aliases are unique inside it. On the first deployment a new owner may choose `--namespace <handle>`; each new app may choose `--slug <alias>`. Both use lowercase ASCII letters, digits and hyphens and start with a letter. Without choices, Cellapp assigns a random privacy-preserving namespace and an alias derived from the display name, adding a suffix on collision. Existing owners must reuse their established namespace. These identifiers are immutable in this release; choose them before the first publish. The CLI's returned app-ID URL remains the stable app host. The owner console shows the share link for `@namespace/alias`, which redirects to that host. Never treat a namespace, alias or display name as an authorization identity; app access and tables remain bound to the app ID.
 
-On a transient upload/network error, retry the same deploy command once: saved pending metadata reuses the deployment operation. Stop after another failure and report the specific error. A version conflict requires refreshing the intended version before starting a new deployment; do not silently overwrite a concurrent update. For quota errors explain the configured limit and recovery action, without purchasing services or deleting apps automatically.
+## Plan, apply, and verify tables
 
-App management commands are `cellapp apps`, `cellapp reset-key <app-id>`, `cellapp delete <app-id>`, `cellapp login`, and `cellapp logout`. Resetting a key invalidates existing sessions. Use reset or delete only when requested; do not reset keys as an invisible retry strategy. If a first deployment's key is lost, explain that the owner can explicitly reset it.
+The versioned, non-secret [`cellapp.data.json`](examples/notes/cellapp.data.json) manifest defines tables, columns, primary keys, indexes and operation policies. Types: `text`, `uuid`, `bigint`, `boolean`, `timestamptz`, `jsonb`. Policy modes: `none` (default), `all-admitted-users`, `own-rows`. The `own-rows` mode needs a non-null text `ownerColumn`; reads and writes are checked against the signed application user ID. Every table needs a primary key. No SQL, function, trigger, database password or provider identity belongs in the manifest. Table names are scoped to the app: an app may define `users` without touching platform users or another app's `users`. This is ordinary app data, not the platform identity source. Keep names unique within one app; `rpc` is reserved for the unsupported PostgREST route, PostgreSQL system column names are unavailable, and generated index names must not collide with table names. Check these rules with `data plan` before applying.
 
-Explain the relevant first-deployment limits briefly: frontend code and bundled values are readable by authorized visitors; never bundle private API credentials. Browser local data is not synchronized between devices. The service hosts static content only, with no user backend or offline Service Worker support.
+A new project needs its first static deployment to create the application association in `cellapp.json`. Build and deploy the frontend once, then use the linked app and configured origin to apply the data manifest. Do not report the table-dependent page as ready until verification succeeds:
+
+```sh
+cellapp data status --project <project>
+cellapp data plan --project <project>
+cellapp data apply --project <project>
+cellapp data verify --project <project>
+```
+
+The first manifest version is `1`; increase by exactly one. Inspect the plan and data version separately from the static release. Identical retries are safe; changed content at an applied version conflicts. For a table or column drop, set `allowDestructive: true` in the manifest and pass `--allow-destructive` to `data apply` after reviewing the plan and backup implications. After a timeout, run status and verify, then retry the same manifest if needed. Do not create a new version for a retry. Adding a non-null column to a populated table fails and rolls back; use a nullable column in this initial subset.
+
+New tables and operations deny frontend access until granted. Apply with an owner credential. Verify an allowed operation and a denied cross-user or ungranted operation before handing out the app URL. Distinguish database-only tests from real browser and PostgREST acceptance. The application database is separate from control data and other apps; application code gets no database password.
+
+## Connect the static frontend
+
+Use `@supabase/supabase-js@2.117.3` for the declared table subset. Initialize `createClient(window.location.origin, 'cellapp-public', {auth: {autoRefreshToken: false, persistSession: false, detectSessionInUrl: false}})`. The publishable string is non-secret and grants nothing. Cellapp checks the logged-in user's host-only app session and admission on each request. Fetch `/_cellapp/me` with same-origin credentials for the stable app-scoped ID; never expose or derive a global Cellapp ID. See the [runnable notes demo](examples/notes/README.md), which includes its build, manifest, and browser CRUD page.
+
+Use only `.from(table).select(columns)`, `.insert(values)`, `.update(values)`, `.delete()`, `.eq()`, `.order()`, `.range()` and `.select()` after a write for returned rows. Handle `{data,error}` and 401/403 states visibly. Supabase Auth, Realtime, Storage, RPC, Edge Functions, joins, arbitrary filters, direct database access, and custom application servers are outside this release. The gateway ignores client authorization/profile headers. A public app admits any signed-in Cellapp user, while tables still require policies. A restricted app requires owner approval or access-key redemption after login.
+
+## Publish and report
+
+Run `cellapp deploy --project <project> --output <output-directory> --build <existing-build-command>` (optionally adding `--namespace` and `--slug` on the first deployment), omitting `--build` for plain HTML. Add `--spa` only for client-side routes. The CLI performs device authorization when needed; provide the verification link and code, keep the command running, and never request account passwords. Report publication only after `status: published`. Report data version/verification and static release separately, then provide the app URL.
+
+The first deployment returns an access key once. Give it only to the requesting owner; never put it in a URL, repository, issue or project state. Old keys can be redeemed only after platform login. `cellapp reset-key <app-id>` rotates future redemption; existing user grants remain active. Revoke an individual grant in the owner console. Use reset or delete only when requested. A lost initial key can be explicitly rotated.
+
+On transient upload/network failure, retry the same deploy command once: pending project metadata reuses the operation. Stop after another failure and report the error. A release version conflict needs review. For data errors use `data status` and `data verify`; do not claim a table-dependent frontend is ready while its data API is unready. Browser local-only state does not synchronize between devices; managed table data does.

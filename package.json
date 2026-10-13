@@ -4,11 +4,30 @@
   "description": "Cellapp static application deployment CLI and Agent Skill",
   "type": "module",
   "license": "MIT",
-  "publishConfig": {"access": "public", "registry": "https://registry.npmjs.org/"},
-  "workspaces": ["packages/cli", "packages/shared"],
-  "engines": {"node": ">=22.12.0"},
-  "bin": {"cellapp": "dist/packages/cli/src/main.js", "ohmyapp": "dist/packages/cli/src/main.js"},
-  "files": ["dist/packages", "skills/cellapp-deploy", "README.md", "LICENSE", "NOTICE"],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "workspaces": [
+    "packages/cli",
+    "packages/shared"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "bin": {
+    "cellapp": "dist/packages/cli/src/main.js",
+    "ohmyapp": "dist/packages/cli/src/main.js"
+  },
+  "files": [
+    "dist/packages",
+    "skills/cellapp-deploy",
+    "!skills/cellapp-deploy/examples/**/node_modules",
+    "!skills/cellapp-deploy/examples/**/dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",

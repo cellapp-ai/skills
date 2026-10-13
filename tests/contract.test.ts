@@ -5,10 +5,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Client } from '../packages/cli/src/client.js';
 import { deploy } from '../packages/cli/src/deploy.js';
+import { runData } from '../packages/cli/src/data.js';
 import { AppError } from '../packages/shared/src/errors.js';
 
 interface Operation { method: string; path: string; successStatus: number; responseRequired?: string[]; responseType?: string }
-const contract = JSON.parse(await readFile(new URL('../contracts/http-v1.json', import.meta.url), 'utf8')) as {operations: Operation[]};
+const contract = JSON.parse(await readFile(new URL('../contracts/http-v2.json', import.meta.url), 'utf8')) as {operations: Operation[]};
 
 function operationFor(method: string, path: string) {
   return contract.operations.find(item => item.method === method && new RegExp(`^${item.path.replace(/\{[^}]+\}/g, '[^/]+')}$`).test(path));
@@ -18,7 +19,7 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
   const root = await mkdtemp(join(tmpdir(), 'cellapp-contract-'));
   const fetchBefore = globalThis.fetch;
   const appId = 'a'.repeat(32);
-  let app: {id: string; name: string; url: string; activeDeployment: string | null; suspended: boolean} | undefined;
+  let app: {id: string; name: string; namespace: string; slug: string; aliasUrl: string; url: string; activeDeployment: string | null; suspended: boolean; visibility: string; dataState: string} | undefined;
   let deployment: {id: string; status: string; uploaded: string[]; manifest: {path: string}[]; baseVersion: string | null; spa: boolean; createdAt: string} | undefined;
   let deploymentNumber = 0;
   const deploymentsByRequest = new Map<string, typeof deployment>();
@@ -38,9 +39,14 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
     else if (path === '/limits') data = {files: 10, fileBytes: 1000, deploymentBytes: 1000};
     else if (path === '/apps' && method === 'GET') data = app ? [app] : [];
     else if (path === '/apps' && method === 'POST') {
-      app = {id: appId, name: String(body.name), url: `https://${appId}.apps.example`, activeDeployment: null, suspended: false};
+      assert.equal(body.namespace, 'demo');
+      assert.equal(body.slug, 'test');
+      app = {id: appId, name: String(body.name), namespace: 'demo', slug: 'test', aliasUrl: 'https://control.example/a/demo/test', url: `https://${appId}.apps.example`, activeDeployment: null, suspended: false, visibility: 'restricted', dataState: 'ready'};
       data = app;
-    } else if (path === `/apps/${appId}/key`) data = {reset: true};
+    } else if (path === `/apps/${appId}/data`) data = {state: 'ready', version: 1, digest: 'f'.repeat(64)};
+    else if (path === `/apps/${appId}/data/verify`) data = {ready: true, version: 1, digest: 'f'.repeat(64)};
+    else if (path === `/apps/${appId}/data/plan` || path === `/apps/${appId}/data/apply`) data = {version: 1, digest: 'f'.repeat(64), operations: ['create table notes'], requiresDestructive: false, alreadyApplied: false};
+    else if (path === `/apps/${appId}/key`) data = {reset: true};
     else if (path === `/apps/${appId}`) { app = undefined; data = {deleted: true}; }
     else if (path === `/apps/${appId}/deployments` && method === 'POST') {
       const requestId = String(body.requestId);
@@ -74,9 +80,10 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
     const project = join(root, 'project');
     await mkdir(join(project, 'dist'), {recursive: true});
     await writeFile(join(project, 'dist', 'index.html'), '<h1>First</h1>');
-    const first = await deploy(client, project, {output: 'dist'}, () => {});
+    const first = await deploy(client, project, {output: 'dist', namespace: 'demo', slug: 'test'}, () => {});
     assert.equal(first.status, 'published');
-    assert.ok('shareKey' in first);
+    assert.equal(first.aliasUrl, 'https://control.example/a/demo/test');
+    assert.ok('accessKey' in first);
     assert.equal((await client.request<unknown[]>('/apps')).length, 1);
     await writeFile(join(project, 'dist', 'index.html'), '<h1>Updated</h1>');
     const original = client.request.bind(client);
@@ -91,7 +98,14 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
     const retry = await deploy(client, project, {}, () => {});
     assert.equal(retry.status, 'published');
     assert.equal(retry.url, first.url);
+    await assert.rejects(deploy(client, project, {slug: 'changed'}, () => {}), /only when creating/);
     assert.equal(deploymentNumber, 2);
+    await writeFile(join(project, 'cellapp.data.json'), JSON.stringify({version: 1, tables: [{name: 'notes', columns: [{name: 'id', type: 'uuid'}, {name: 'body', type: 'text'}], primaryKey: ['id'], policies: {select: 'all-admitted-users', insert: 'all-admitted-users'}}]}));
+    const association = {appId, origin: client.origin, name: 'Test', output: 'dist', spa: false, createRequestId: 'b'.repeat(32)};
+    assert.ok((await runData(client, 'plan', project, association)));
+    assert.ok((await runData(client, 'apply', project, association)));
+    assert.ok((await runData(client, 'status', project, association)));
+    assert.ok((await runData(client, 'verify', project, association)));
     assert.deepEqual(await client.request(`/apps/${appId}/key`, 'POST', {key: 'f'.repeat(64)}), {reset: true});
     assert.deepEqual(await client.request(`/apps/${appId}`, 'DELETE'), {deleted: true});
     await client.logout();

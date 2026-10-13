@@ -7,11 +7,11 @@ import { Client, randomKey, requestID, saveJSON } from './client.js';
 import { readProject } from './project.js';
 
 export interface Project {
-  origin: string; appId?: string; name: string; output: string; build?: string; spa: boolean;
+  origin: string; appId?: string; name: string; namespace?: string; slug?: string; output: string; build?: string; spa: boolean;
   createRequestId: string;
   pending?: {requestId: string; fingerprint: string; baseVersion: string | null};
 }
-interface App {id: string; url: string; activeDeployment: string | null}
+interface App {id: string; url: string; namespace: string; slug: string; aliasUrl: string; activeDeployment: string | null}
 export async function build(command: string | undefined, project: string) {
   if (!command) return;
   await new Promise<void>((resolve, reject) => {
@@ -43,11 +43,14 @@ export async function collect(output: string, limits: Limits): Promise<Entry[]> 
   await visit(root);
   return manifest(files, limits);
 }
-export async function deploy(client: Client, directory: string, options: {output?: string; build?: string; name?: string; spa?: boolean}, notify: (s: string) => void) {
+export async function deploy(client: Client, directory: string, options: {output?: string; build?: string; name?: string; namespace?: string; slug?: string; spa?: boolean}, notify: (s: string) => void) {
   const projectPath = resolve(directory);
   const configPath = join(projectPath, 'cellapp.json');
   let project = await readProject(projectPath);
   if (project && project.origin !== client.origin) throw new Error('Project belongs to another control origin');
+  if (project?.appId && (options.namespace !== undefined || options.slug !== undefined)) {
+    throw new Error('Namespace and app alias are set only when creating an application');
+  }
   const output = options.output ?? project?.output;
   ensure(output, 400, 'output_required', 'Specify --output with the static build directory');
   const outPath = resolve(projectPath, output);
@@ -61,13 +64,14 @@ export async function deploy(client: Client, directory: string, options: {output
   ensure(!isAbsolute(actualRelative) && actualRelative !== '..' && !actualRelative.startsWith('../'), 400, 'invalid_output', 'Output resolves outside the project');
   const limits = await client.request<Limits>('/limits');
   const files = await collect(outPath, limits);
-  project = {...project, origin: client.origin, name: options.name ?? project?.name ?? 'My app', output, build: command, spa: options.spa ?? project?.spa ?? false, createRequestId: project?.createRequestId ?? requestID()};
+  project = {...project, origin: client.origin, name: options.name ?? project?.name ?? 'My app', namespace: options.namespace ?? project?.namespace, slug: options.slug ?? project?.slug, output, build: command, spa: options.spa ?? project?.spa ?? false, createRequestId: project?.createRequestId ?? requestID()};
   let initialKey: string | undefined;
   if (!project.appId) {
     // The secret stays in memory; after a process crash the owner can list apps and
-    // explicitly link/reset the key. Never persist share keys in project metadata.
+    // explicitly link/rotate the key. Never persist access keys in project metadata.
     initialKey = randomKey();
-    const body = {name: project.name, key: initialKey, requestId: project.createRequestId};
+    const body = {name: project.name, key: initialKey, requestId: project.createRequestId,
+      ...(project.namespace ? {namespace: project.namespace} : {}), ...(project.slug ? {slug: project.slug} : {})};
     const create = () => client.request<App>('/apps', 'POST', body);
     let app: App;
     try { app = await create(); } catch (e) { if (e instanceof AppError) throw e; app = await create(); }
@@ -97,6 +101,7 @@ export async function deploy(client: Client, directory: string, options: {output
   const result = await client.request<{url: string; id: string; status: string}>(`${base}/${d.id}/publish`, 'POST', {});
   delete project.pending;
   await saveJSON(configPath, project);
-  notify('发布成功；浏览器本地数据不会跨设备同步。');
-  return {...result, ...(initialKey ? {shareKey: initialKey} : {keyUnchanged: true})};
+  notify('静态应用已发布。');
+  return {...result, namespace: app.namespace, slug: app.slug, aliasUrl: app.aliasUrl,
+    ...(initialKey ? {accessKey: initialKey} : {keyUnchanged: true})};
 }

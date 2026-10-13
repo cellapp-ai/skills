@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "tables": [
+    {
+      "name": "notes",
+      "columns": [
+        {"name": "id", "type": "uuid"},
+        {"name": "owner_id", "type": "text"},
+        {"name": "body", "type": "text"}
+      ],
+      "primaryKey": ["id"],
+      "indexes": [{"columns": ["owner_id"]}],
+      "policies": {
+        "select": "own-rows",
+        "insert": "own-rows",
+        "update": "own-rows",
+        "delete": "own-rows",
+        "ownerColumn": "owner_id"
+      }
+    }
+  ]
+}

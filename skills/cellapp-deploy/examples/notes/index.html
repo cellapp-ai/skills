@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cellapp 笔记 Demo</title>
+  <style>
+    :root { font-family: system-ui, sans-serif; color: #1c2b25; background: #f4f7f3; }
+    body { max-width: 720px; margin: 40px auto; padding: 0 20px; }
+    main { background: white; padding: 28px; border: 1px solid #d9e5dc; border-radius: 16px; box-shadow: 0 8px 32px #1536230d; }
+    h1 { margin: 0 0 8px; }
+    p { line-height: 1.5; }
+    form { display: flex; gap: 8px; margin: 20px 0; }
+    input { flex: 1; min-width: 0; padding: 10px; border: 1px solid #adbfaf; border-radius: 8px; font: inherit; }
+    button { padding: 9px 14px; border: 0; border-radius: 8px; color: white; background: #21684a; font: inherit; cursor: pointer; }
+    button:disabled { opacity: .55; cursor: wait; }
+    button.secondary { color: #21684a; background: #e5f0e8; }
+    li { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-top: 1px solid #e7eee7; }
+    li span { overflow-wrap: anywhere; }
+    li div { display: flex; gap: 8px; flex: none; }
+    #status { min-height: 1.5em; color: #345446; }
+    #status.error { color: #a22828; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Notes app</h1>
+    <p>使用 Cellapp 登录身份保存笔记。每位用户只能读写自己的记录。</p>
+    <p id="identity">正在连接应用数据库…</p>
+    <form id="create-form">
+      <input id="note-body" aria-label="笔记内容" maxlength="2000" required placeholder="写一条笔记">
+      <button type="submit">保存笔记</button>
+    </form>
+    <p id="status" role="status" aria-live="polite"></p>
+    <ul id="notes"></ul>
+    <button id="crud" class="secondary" type="button">Run CRUD</button>
+  </main>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

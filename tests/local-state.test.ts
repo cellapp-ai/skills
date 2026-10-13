@@ -23,4 +23,5 @@ test('new and migrated project files satisfy the published local-state schema', 
   conforms(legacy);
   const {pending: _pending, ...current} = legacy;
   conforms(current);
+  conforms({...current, namespace: 'my-space', slug: 'notes'});
 });

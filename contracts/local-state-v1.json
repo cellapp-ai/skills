@@ -2,24 +2,70 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Cellapp project association v1",
   "type": "object",
-  "required": ["origin", "name", "output", "spa", "createRequestId"],
+  "required": [
+    "origin",
+    "name",
+    "output",
+    "spa",
+    "createRequestId"
+  ],
   "properties": {
-    "origin": {"type": "string", "pattern": "^https://"},
-    "appId": {"type": "string", "pattern": "^[a-f0-9]{32}$"},
-    "name": {"type": "string"},
-    "output": {"type": "string"},
-    "build": {"type": "string"},
-    "spa": {"type": "boolean"},
-    "createRequestId": {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+    "origin": {
+      "type": "string",
+      "pattern": "^https://"
+    },
+    "appId": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{32}$"
+    },
+    "name": {
+      "type": "string"
+    },
+    "output": {
+      "type": "string"
+    },
+    "build": {
+      "type": "string"
+    },
+    "spa": {
+      "type": "boolean"
+    },
+    "createRequestId": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{32}$"
+    },
     "pending": {
       "type": "object",
-      "required": ["requestId", "fingerprint", "baseVersion"],
+      "required": [
+        "requestId",
+        "fingerprint",
+        "baseVersion"
+      ],
       "properties": {
-        "requestId": {"type": "string", "pattern": "^[a-f0-9]{32}$"},
-        "fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-        "baseVersion": {"type": ["string", "null"]}
+        "requestId": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{32}$"
+        },
+        "fingerprint": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "baseVersion": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
       },
       "additionalProperties": false
+    },
+    "namespace": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,62}$"
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,62}$"
     }
   },
   "additionalProperties": false
