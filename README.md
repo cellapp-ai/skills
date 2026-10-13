@@ -1,6 +1,6 @@
 # Cellapp CLI and Agent Skill
 
-Cellapp publishes static HTML applications from a local project. The CLI builds and uploads only the chosen static output directory. The Agent Skill guides an AI agent through the same process. A Cellapp control service URL is required; the Skill does not supply one.
+Cellapp publishes static HTML applications from a local project. The CLI builds and uploads only the chosen static output directory. The Agent Skill guides an AI agent through the same process. The default control origin is `https://console.cellapp.ai`; use `--origin` or `CELLAPP_ORIGIN` for another service.
 
 ## Install
 
@@ -22,9 +22,9 @@ The installable Skill lives at [`skills/cellapp-deploy/SKILL.md`](skills/cellapp
 ## Deploy
 
 ```sh
-cellapp login --origin https://control.example
-cellapp deploy --project /absolute/project --output dist --build 'npm run build' --origin https://control.example
-cellapp apps --origin https://control.example
+cellapp login
+cellapp deploy --project /absolute/project --output dist --build 'npm run build'
+cellapp apps
 ```
 
 Plain HTML directories do not need `--build`. Use `--spa` only if the site has client-side routes. The first deployment returns the stable app-ID URL and an access key once; keep the key private. Add `--namespace <handle> --slug <alias>` on first deployment for a readable `@namespace/alias` reference; the owner console provides its share link. Handles and aliases are immutable in this release, while display names may repeat. Visitors first sign in with Cellapp. Restricted applications then require owner approval or access-key redemption; public applications admit any signed-in user. Rotating a key stops new redemptions and preserves existing user grants. `cellapp.json` stores the app association and pending deployment metadata without secrets. Credentials are stored in `~/.config/cellapp/` with private file permissions.

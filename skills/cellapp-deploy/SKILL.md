@@ -5,7 +5,7 @@ description: Build and publish a static Cellapp frontend, manage its PostgreSQL 
 
 # Develop and deploy a Cellapp application
 
-Use the installed `cellapp` CLI. Installing this Skill does not install the CLI; if it is unavailable, direct the user to the public repository README. Use the configured `CELLAPP_ORIGIN`, existing `cellapp.json`, or an origin supplied by the user. Preserve `ohmyapp.json` and `OHMYAPP_ORIGIN` migration behavior. Never invent an origin or store a credential in the project.
+Use the installed `cellapp` CLI. Installing this Skill does not install the CLI; if it is unavailable, direct the user to the public repository README. Use an origin supplied by the user, existing project configuration, or `CELLAPP_ORIGIN` when present; otherwise the CLI defaults to `https://console.cellapp.ai`. Preserve `ohmyapp.json` and `OHMYAPP_ORIGIN` migration behavior. Do not invent another origin or store a credential in the project.
 
 ## Inspect
 

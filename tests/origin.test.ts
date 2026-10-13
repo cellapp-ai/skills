@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { selectOrigin } from '../packages/cli/src/origin.js';
+import { DEFAULT_ORIGIN, selectOrigin } from '../packages/cli/src/origin.js';
 import type { Project } from '../packages/cli/src/deploy.js';
 
 test('Cellapp origin precedence keeps the old environment variable as a fallback', () => {
@@ -12,4 +12,7 @@ test('Cellapp origin precedence keeps the old environment variable as a fallback
   assert.equal(selectOrigin(undefined, undefined, legacy, environment), environment.CELLAPP_ORIGIN);
   assert.equal(selectOrigin(undefined, undefined, legacy, {OHMYAPP_ORIGIN: environment.OHMYAPP_ORIGIN}), legacy.origin);
   assert.equal(selectOrigin(undefined, undefined, undefined, {OHMYAPP_ORIGIN: environment.OHMYAPP_ORIGIN}), environment.OHMYAPP_ORIGIN);
+  assert.equal(selectOrigin(undefined, undefined, undefined, {}), DEFAULT_ORIGIN);
+  assert.equal(selectOrigin(undefined, undefined, undefined, {CELLAPP_ORIGIN: '', OHMYAPP_ORIGIN: ''}), DEFAULT_ORIGIN);
+  assert.equal(DEFAULT_ORIGIN, 'https://console.cellapp.ai');
 });
