@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util';
 import { resolve, join } from 'node:path';
-import { Client, randomKey, readJSON, saveJSON } from './client.js';
+import { Client, randomKey, requestID, readJSON, saveJSON } from './client.js';
 import { deploy, type Project } from './deploy.js';
 import { AppError } from '../../shared/src/errors.js';
 import { readProject } from './project.js';
@@ -18,7 +18,7 @@ const [command, appId, dataAppId] = positionals;
 const notify = (s: string) => process.stderr.write(s + '\n');
 try {
   if (values.help || !command) {
-    process.stdout.write('cellapp <login|logout|deploy|apps|link|reset-key|delete|data> [app-id] [--origin https://console.cellapp.ai]\nDeploy: --project . --output dist [--build "npm run build"] [--namespace user-slug] [--slug app-slug] [--spa]\nData: data <plan|apply|status|verify> [app-id] --project . [--manifest cellapp.data.json] [--allow-destructive]\nDefault origin: https://console.cellapp.ai\n');
+    process.stdout.write('cellapp <login|logout|deploy|apps|link|reset-key|delete|data> [app-id] [--origin https://console.cellapp.ai]\nDeploy: --project . --output dist [--build "npm run build"] [--namespace user-slug] [--slug app-slug] [--spa]\nLink: link <app-id> --project . --output dist\nData: data <plan|apply|status|verify|reconcile> [app-id] --project . [--manifest cellapp.data.json] [--allow-destructive]\nDefault origin: https://console.cellapp.ai\n');
   } else {
     const projectPath = resolve(values.project);
     const newProject = await readJSON<Project>(join(projectPath, 'cellapp.json'));
@@ -40,10 +40,16 @@ try {
         if (command === 'reset-key') { const key = randomKey(); await client.request(`/apps/${appId}/key`, 'POST', {key}); result = {accessKey: key}; }
         else if (command === 'delete') result = await client.request(`/apps/${appId}`, 'DELETE');
         else if (command === 'link') {
-          const apps = await client.request<{id: string}[]>('/apps');
-          if (!apps.some(a => a.id === appId)) throw new Error('Application not owned by this credential');
-          if (!project) throw new Error('Create project metadata with a deployment before linking');
-          project.appId = appId; delete project.pending; await saveJSON(join(projectPath, 'cellapp.json'), project); result = {linked: appId};
+          if (project && project.origin !== client.origin) throw new Error('Project belongs to another control origin');
+          const apps = await client.request<{id: string; name: string; namespace: string; slug: string}[]>('/apps');
+          const app = apps.find(a => a.id === appId);
+          if (!app) throw new Error('Application not owned by this credential');
+          if (project?.appId && project.appId !== appId) throw new Error('Project is already linked to another application');
+          const output = values.output ?? project?.output;
+          if (!output) throw new Error('Specify --output to link a new project');
+          const linked: Project = {...project, origin: client.origin, appId, name: project?.name ?? app.name, namespace: app.namespace, slug: app.slug, output, spa: project?.spa ?? false, createRequestId: project?.createRequestId ?? requestID()};
+          delete linked.pending;
+          await saveJSON(join(projectPath, 'cellapp.json'), linked); result = {linked: appId};
         } else throw new Error('Unknown command; use --help');
       }
       process.stdout.write(JSON.stringify(result, null, 2) + '\n');

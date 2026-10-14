@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Client } from '../packages/cli/src/client.js';
@@ -22,6 +22,8 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
   let app: {id: string; name: string; namespace: string; slug: string; aliasUrl: string; url: string; activeDeployment: string | null; suspended: boolean; visibility: string; dataState: string} | undefined;
   let deployment: {id: string; status: string; uploaded: string[]; manifest: {path: string}[]; baseVersion: string | null; spa: boolean; createdAt: string} | undefined;
   let deploymentNumber = 0;
+  let provisioningFailed = false;
+  let createdKey = '';
   const deploymentsByRequest = new Map<string, typeof deployment>();
   const seen = new Set<string>();
   globalThis.fetch = async (input, init) => {
@@ -42,8 +44,15 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
       assert.equal(body.namespace, 'demo');
       assert.equal(body.slug, 'test');
       app = {id: appId, name: String(body.name), namespace: 'demo', slug: 'test', aliasUrl: 'https://control.example/a/demo/test', url: 'https://test-demo.apps.example', activeDeployment: null, suspended: false, visibility: 'restricted', dataState: 'ready'};
+      createdKey = String(body.key);
+      if (!provisioningFailed) {
+        provisioningFailed = true;
+        app.dataState = 'error';
+        return new Response(JSON.stringify({error: 'app_data_not_ready', message: 'retry', details: {appId}}), {status: 503, headers: {'Content-Type': 'application/json'}});
+      }
       data = app;
-    } else if (path === `/apps/${appId}/data`) data = {state: 'ready', version: 1, digest: 'f'.repeat(64)};
+    } else if (path === `/apps/${appId}/data`) data = {state: 'ready', errorCode: null, version: 1, digest: 'f'.repeat(64)};
+    else if (path === `/apps/${appId}/data/reconcile`) { app!.dataState = 'ready'; data = {ready: true}; }
     else if (path === `/apps/${appId}/data/verify`) data = {ready: true, version: 1, digest: 'f'.repeat(64)};
     else if (path === `/apps/${appId}/data/plan` || path === `/apps/${appId}/data/apply`) data = {version: 1, digest: 'f'.repeat(64), operations: ['create table notes'], requiresDestructive: false, alreadyApplied: false};
     else if (path === `/apps/${appId}/key`) data = {reset: true};
@@ -80,10 +89,18 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
     const project = join(root, 'project');
     await mkdir(join(project, 'dist'), {recursive: true});
     await writeFile(join(project, 'dist', 'index.html'), '<h1>First</h1>');
-    const first = await deploy(client, project, {output: 'dist', namespace: 'demo', slug: 'test'}, () => {});
+    await assert.rejects(deploy(client, project, {output: 'dist', namespace: 'demo', slug: 'test'}, () => {}), error => error instanceof AppError && error.code === 'app_data_not_ready');
+    const saved = JSON.parse(await readFile(join(project, 'cellapp.json'), 'utf8')) as {appId: string; createRequestId: string};
+    assert.equal(saved.appId, appId);
+    assert.ok(!(await readFile(join(project, 'cellapp.json'), 'utf8')).includes(createdKey));
+    const keyPath = `${client.credentialFile}.create-${saved.createRequestId}`;
+    assert.equal((await stat(keyPath)).mode & 0o777, 0o600);
+    const first = await deploy(client, project, {}, () => {});
     assert.equal(first.status, 'published');
     assert.equal(first.aliasUrl, 'https://control.example/a/demo/test');
     assert.ok('accessKey' in first);
+    assert.equal(first.accessKey, createdKey);
+    await assert.rejects(stat(keyPath), {code: 'ENOENT'});
     assert.equal((await client.request<unknown[]>('/apps')).length, 1);
     await writeFile(join(project, 'dist', 'index.html'), '<h1>Updated</h1>');
     const original = client.request.bind(client);

@@ -126,12 +126,16 @@
         "namespace_taken",
         "namespace_mismatch",
         "invalid_slug",
-        "slug_taken"
+        "slug_taken",
+        "app_data_not_ready"
       ],
       "requestOptional": [
         "namespace",
         "slug"
-      ]
+      ],
+      "appDataFailureDetails": {
+        "appId": "The application created before provisioning failed; retry or link this ID."
+      }
     },
     {
       "method": "DELETE",
@@ -241,11 +245,25 @@
       "responseRequired": [
         "state",
         "version",
-        "digest"
+        "digest",
+        "errorCode"
       ],
       "errors": [
         "app_not_found",
         "app_data_unavailable",
+        "authorization_required"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/apps/{app}/data/reconcile",
+      "successStatus": 200,
+      "responseRequired": [
+        "ready"
+      ],
+      "errors": [
+        "app_not_found",
+        "app_data_not_ready",
         "authorization_required"
       ]
     },

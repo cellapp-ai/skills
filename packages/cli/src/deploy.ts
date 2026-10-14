@@ -1,9 +1,9 @@
-import { lstat, readdir, readFile, realpath } from 'node:fs/promises';
+import { lstat, readdir, readFile, realpath, unlink } from 'node:fs/promises';
 import { resolve, relative, join, isAbsolute } from 'node:path';
 import { spawn } from 'node:child_process';
 import { manifest, sha256, validPath, type Entry, type Limits } from '../../shared/src/artifacts.js';
 import { AppError, ensure } from '../../shared/src/errors.js';
-import { Client, randomKey, requestID, saveJSON } from './client.js';
+import { Client, randomKey, requestID, saveJSON, readJSON } from './client.js';
 import { readProject } from './project.js';
 
 export interface Project {
@@ -11,7 +11,7 @@ export interface Project {
   createRequestId: string;
   pending?: {requestId: string; fingerprint: string; baseVersion: string | null};
 }
-interface App {id: string; url: string; namespace: string; slug: string; aliasUrl: string; activeDeployment: string | null}
+interface App {id: string; url: string; namespace: string; slug: string; aliasUrl: string; activeDeployment: string | null; dataState: string}
 export async function build(command: string | undefined, project: string) {
   if (!command) return;
   await new Promise<void>((resolve, reject) => {
@@ -65,22 +65,34 @@ export async function deploy(client: Client, directory: string, options: {output
   const limits = await client.request<Limits>('/limits');
   const files = await collect(outPath, limits);
   project = {...project, origin: client.origin, name: options.name ?? project?.name ?? 'My app', namespace: options.namespace ?? project?.namespace, slug: options.slug ?? project?.slug, output, build: command, spa: options.spa ?? project?.spa ?? false, createRequestId: project?.createRequestId ?? requestID()};
-  let initialKey: string | undefined;
+  const keyPath = `${client.credentialFile}.create-${project.createRequestId}`;
+  let initialKey = (await readJSON<{key: string}>(keyPath))?.key;
+  if (initialKey) ensure(/^[a-f0-9]{64}$/.test(initialKey), 400, 'invalid_state', 'Pending application key is invalid');
   if (!project.appId) {
-    // The secret stays in memory; after a process crash the owner can list apps and
-    // explicitly link/rotate the key. Never persist access keys in project metadata.
-    initialKey = randomKey();
+    initialKey ??= randomKey();
+    await saveJSON(keyPath, {key: initialKey}, true);
+    await saveJSON(configPath, project);
     const body = {name: project.name, key: initialKey, requestId: project.createRequestId,
       ...(project.namespace ? {namespace: project.namespace} : {}), ...(project.slug ? {slug: project.slug} : {})};
     const create = () => client.request<App>('/apps', 'POST', body);
     let app: App;
-    try { app = await create(); } catch (e) { if (e instanceof AppError) throw e; app = await create(); }
+    try { app = await create(); } catch (e) {
+      if (e instanceof AppError) {
+        if (e.code === 'app_data_not_ready' && typeof e.details?.appId === 'string' && /^[a-f0-9]{32}$/.test(e.details.appId)) {
+          project.appId = e.details.appId;
+          await saveJSON(configPath, project);
+        }
+        throw e;
+      }
+      app = await create();
+    }
     project.appId = app.id;
     await saveJSON(configPath, project);
   }
   const apps = await client.request<App[]>('/apps');
   const app = apps.find(a => a.id === project!.appId);
   ensure(app, 404, 'app_not_found', 'Linked app was deleted or belongs to another owner');
+  if (app.dataState !== 'ready') await client.request(`/apps/${app.id}/data/reconcile`, 'POST', {});
   const fingerprint = sha256(JSON.stringify({files, spa: project.spa}));
   if (project.pending && project.pending.fingerprint !== fingerprint) project.pending = undefined;
   project.pending ??= {requestId: requestID(), fingerprint, baseVersion: app.activeDeployment};
@@ -101,6 +113,7 @@ export async function deploy(client: Client, directory: string, options: {output
   const result = await client.request<{url: string; id: string; status: string}>(`${base}/${d.id}/publish`, 'POST', {});
   delete project.pending;
   await saveJSON(configPath, project);
+  if (initialKey) await unlink(keyPath);
   notify('静态应用已发布。');
   return {...result, namespace: app.namespace, slug: app.slug, aliasUrl: app.aliasUrl,
     ...(initialKey ? {accessKey: initialKey} : {keyUnchanged: true})};
