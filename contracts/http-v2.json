@@ -69,7 +69,8 @@
       "responseRequired": [
         "files",
         "fileBytes",
-        "deploymentBytes"
+        "deploymentBytes",
+        "monthlyVisitors"
       ],
       "errors": [
         "authorization_required"

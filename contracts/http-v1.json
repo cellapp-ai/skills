@@ -10,7 +10,7 @@
     {"method": "POST", "path": "/device-authorizations", "request": {}, "successStatus": 201, "responseRequired": ["deviceSecret", "userCode", "verificationUri", "interval", "expiresIn"], "errors": ["rate_limited"]},
     {"method": "POST", "path": "/device-authorizations/poll", "requestRequired": ["deviceSecret"], "successStatus": 200, "responseRequired": ["token", "credentialId", "expiresIn"], "errors": ["authorization_pending", "slow_down", "access_denied", "expired_token", "already_claimed"]},
     {"method": "DELETE", "path": "/credentials/current", "successStatus": 200, "responseRequired": ["revoked"], "errors": ["authorization_required"]},
-    {"method": "GET", "path": "/limits", "successStatus": 200, "responseRequired": ["files", "fileBytes", "deploymentBytes"], "errors": ["authorization_required"]},
+    {"method": "GET", "path": "/limits", "successStatus": 200, "responseRequired": ["files", "fileBytes", "deploymentBytes", "monthlyVisitors"], "errors": ["authorization_required"]},
     {"method": "GET", "path": "/apps", "successStatus": 200, "responseType": "array", "itemRequired": ["id", "name", "activeDeployment", "suspended", "url"], "errors": ["authorization_required"]},
     {"method": "POST", "path": "/apps", "requestRequired": ["name", "key", "requestId"], "successStatus": 201, "responseRequired": ["id", "name", "activeDeployment", "suspended", "url"], "errors": ["invalid_app", "idempotency_conflict", "app_limit", "authorization_required"]},
     {"method": "DELETE", "path": "/apps/{app}", "successStatus": 200, "responseRequired": ["deleted"], "errors": ["app_not_found", "authorization_required"]},

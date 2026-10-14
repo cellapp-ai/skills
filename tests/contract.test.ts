@@ -38,7 +38,7 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
     if (path === '/device-authorizations') data = {deviceSecret: 'secret', userCode: 'CODE', verificationUri: 'https://control.example/device', interval: 0, expiresIn: 10};
     else if (path === '/device-authorizations/poll') data = {token: 'credential', credentialId: 'c'.repeat(32), expiresIn: 100};
     else if (path === '/credentials/current') data = {revoked: true};
-    else if (path === '/limits') data = {files: 10, fileBytes: 1000, deploymentBytes: 1000};
+    else if (path === '/limits') data = {files: 10, fileBytes: 1000, deploymentBytes: 1000, monthlyVisitors: 1000};
     else if (path === '/apps' && method === 'GET') data = app ? [app] : [];
     else if (path === '/apps' && method === 'POST') {
       assert.equal(body.namespace, 'demo');
