@@ -5,7 +5,7 @@ description: Develop, update and deploy a static Cellapp app from the user's pro
 
 # Develop and deploy a Cellapp application
 
-Use the official `cellapp` CLI for deployment and table operations. Installing this Skill does not install the CLI; set it up yourself when absent instead of sending the user to an installation guide. The public [Agent deployment instructions](https://console.cellapp.ai/api/deploy/instructions) provide the short deployment path; this Skill covers data and recovery in more detail. Use an origin supplied by the user, existing project configuration, or `CELLAPP_ORIGIN` when present; otherwise the CLI defaults to `https://console.cellapp.ai`. Preserve `ohmyapp.json` and `OHMYAPP_ORIGIN` migration behavior. Do not invent another origin or store a credential in the project.
+Use the official `cellapp` CLI for deployment and table operations. Installing this Skill does not install the CLI; set it up yourself when absent instead of sending the user to an installation guide. The public [Agent deployment instructions](https://cellapp.ai/deploy/AGENTS.md) provide the short deployment path; this Skill covers data and recovery in more detail. Use an origin supplied by the user, existing project configuration, or `CELLAPP_ORIGIN` when present; otherwise the CLI defaults to `https://console.cellapp.ai`. Preserve `ohmyapp.json` and `OHMYAPP_ORIGIN` migration behavior. Do not invent another origin or store a credential in the project.
 
 ## Prepare the CLI
 
