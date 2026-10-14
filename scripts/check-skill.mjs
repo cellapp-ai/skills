@@ -11,4 +11,7 @@ if (!match || !/^name: cellapp-deploy$/m.test(match[1]) || !/^description: .{20,
 if (!content.includes('`cellapp` CLI') || !content.includes('Installing this Skill does not install the CLI')) {
   throw new Error('Cellapp Skill must explain the CLI prerequisite');
 }
+if (!content.includes('npm install -g @cellapp/cli@latest') || !content.includes('cellapp --help') || !content.includes('Node.js is at least 22.12')) {
+  throw new Error('Cellapp Skill must guide Agent-led CLI installation and verification');
+}
 process.stdout.write('Cellapp Skill structure passed.\n');

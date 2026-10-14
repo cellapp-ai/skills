@@ -1,11 +1,22 @@
 ---
 name: cellapp-deploy
-description: Build and publish a static Cellapp frontend, manage its PostgreSQL tables and row policies, and connect supported supabase-js CRUD without an application backend.
+description: Develop, update and deploy a static Cellapp app from the user's project. Set up the CLI when needed, guide browser authorization, and optionally manage supported application tables.
 ---
 
 # Develop and deploy a Cellapp application
 
-Use the installed `cellapp` CLI. Installing this Skill does not install the CLI; if it is unavailable, direct the user to the public repository README. Use an origin supplied by the user, existing project configuration, or `CELLAPP_ORIGIN` when present; otherwise the CLI defaults to `https://console.cellapp.ai`. Preserve `ohmyapp.json` and `OHMYAPP_ORIGIN` migration behavior. Do not invent another origin or store a credential in the project.
+Use the official `cellapp` CLI for deployment and table operations. Installing this Skill does not install the CLI; set it up yourself when absent instead of sending the user to an installation guide. The public [Agent deployment instructions](https://console.cellapp.ai/api/deploy/instructions) provide the short deployment path; this Skill covers data and recovery in more detail. Use an origin supplied by the user, existing project configuration, or `CELLAPP_ORIGIN` when present; otherwise the CLI defaults to `https://console.cellapp.ai`. Preserve `ohmyapp.json` and `OHMYAPP_ORIGIN` migration behavior. Do not invent another origin or store a credential in the project.
+
+## Prepare the CLI
+
+Check whether `cellapp --help` works. If it does, use the existing CLI. If it is missing, check Node.js is at least 22.12 and npm is available, then run:
+
+```sh
+npm install -g @cellapp/cli@latest
+cellapp --help
+```
+
+Perform installation yourself when the local environment permits. If global installation is blocked, verify with `npm exec --yes --package=@cellapp/cli@latest -- cellapp --help` and use the same `npm exec --yes --package=@cellapp/cli@latest -- cellapp` prefix for later commands. Do not ask the user to run setup commands as the default path. If Node.js is missing or unsupported, npm cannot fetch the package, or both invocation paths fail, explain the specific blocker and safe next step; do not use `sudo`, disable TLS checks or install from an unverified source. Continue only after CLI verification succeeds. Keep the CLI's own daily upgrade hint separate from the deployment result.
 
 ## Inspect
 
@@ -40,7 +51,7 @@ Use only `.from(table).select(columns)`, `.insert(values)`, `.update(values)`, `
 
 ## Publish and report
 
-Run `cellapp deploy --project <project> --output <output-directory> --build <existing-build-command>` (optionally adding `--namespace` and `--slug` on the first deployment), omitting `--build` for plain HTML. Add `--spa` only for client-side routes. The CLI performs device authorization when needed; provide the verification link and code, keep the command running, and never request account passwords. Report publication only after `status: published`. Report data version/verification and static release separately, then provide the app URL.
+Run `cellapp deploy --project <project> --output <output-directory> --build <existing-build-command>` (optionally adding `--namespace` and `--slug` on the first deployment), omitting `--build` for plain HTML. Add `--spa` only for client-side routes. The CLI performs device authorization when needed; provide the verification link and code, keep the command running while the user approves in the browser, and never request account passwords. Do not treat a chat reply as approval. Report publication only after `status: published`. Report data version/verification and static release separately, then provide the app URL.
 
 The first deployment returns an access key once. Give it only to the requesting owner; never put it in a URL, repository, issue or project state. Old keys can be redeemed only after platform login. `cellapp reset-key <app-id>` rotates future redemption; existing user grants remain active. Revoke an individual grant in the owner console. Use reset or delete only when requested. A lost initial key can be explicitly rotated.
 

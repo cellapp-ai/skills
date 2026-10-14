@@ -2,22 +2,24 @@
 
 Cellapp publishes static HTML applications from a local project. The CLI builds and uploads only the chosen static output directory. The Agent Skill guides an AI agent through the same process. The default control origin is `https://console.cellapp.ai`; use `--origin` or `CELLAPP_ORIGIN` for another service.
 
-## Install
+## Ask an Agent to deploy
 
-Requires Node.js 22.12 or later. Install the CLI from the published Cellapp package when available:
+Open the [Cellapp deployment guide](https://console.cellapp.ai/deploy), copy its one-request prompt, and paste it into the AI coding tool working on your project. The Agent reads the [machine-readable instructions](https://console.cellapp.ai/api/deploy/instructions), installs and verifies the CLI when needed, builds your static frontend, and publishes it. You only need to approve the device authorization in your browser when prompted. The Agent should give you the published URL and any remaining access step.
+
+For Agent tools that support Skills, you can also install the [Cellapp deployment Skill](skills/cellapp-deploy/SKILL.md) with `npx skills add cellapp-ai/skills`. The Skill gives the Agent additional guidance for application tables and recovery. Its installation does not install the CLI; the Agent handles that during deployment.
+
+## Manual install
+
+Requires Node.js 22.12 or later. To use the CLI yourself, install the published Cellapp package:
 
 ```sh
 npm install -g @cellapp/cli
 cellapp --help
 ```
 
-Install the Agent Skill separately from this public GitHub repository:
+If global installation is unavailable, run the CLI without installing it globally: `npm exec --yes --package=@cellapp/cli@latest -- cellapp --help`. Use the same prefix for `deploy` and other commands.
 
-```sh
-npx skills add cellapp-ai/skills
-```
-
-The installable Skill lives at [`skills/cellapp-deploy/SKILL.md`](skills/cellapp-deploy/SKILL.md). Installing the Skill does not install the CLI. Contributors can use `npm ci`, `npm run build`, and `npm run cli -- --help` from this repository.
+Contributors can use `npm ci`, `npm run build`, and `npm run cli -- --help` from this repository.
 
 The CLI checks for a newer stable npm release on its first run each local day. If one is available, it prints an upgrade hint to stderr. To upgrade, run `npm install -g @cellapp/cli@latest`. The check sends no credentials or project data, times out after two seconds, and does not stop a command when offline. Its last-attempt date is stored in `~/.config/cellapp/update-check.json` (or under `--config-dir`).
 
