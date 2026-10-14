@@ -1,6 +1,6 @@
 {
   "name": "@cellapp/cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Cellapp static application deployment CLI and Agent Skill",
   "type": "module",
   "license": "MIT",

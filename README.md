@@ -17,7 +17,9 @@ Install the Agent Skill separately from this public GitHub repository:
 npx skills add cellapp-ai/skills
 ```
 
-The installable Skill lives at [`skills/cellapp-deploy/SKILL.md`](skills/cellapp-deploy/SKILL.md). Installing the Skill does not install the CLI. Until the first package release, contributors can use `npm ci`, `npm run build`, and `npm run cli -- --help` from this repository.
+The installable Skill lives at [`skills/cellapp-deploy/SKILL.md`](skills/cellapp-deploy/SKILL.md). Installing the Skill does not install the CLI. Contributors can use `npm ci`, `npm run build`, and `npm run cli -- --help` from this repository.
+
+The CLI checks for a newer stable npm release on its first run each local day. If one is available, it prints an upgrade hint to stderr. To upgrade, run `npm install -g @cellapp/cli@latest`. The check sends no credentials or project data, times out after two seconds, and does not stop a command when offline. Its last-attempt date is stored in `~/.config/cellapp/update-check.json` (or under `--config-dir`).
 
 ## Deploy
 

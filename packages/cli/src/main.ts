@@ -7,6 +7,7 @@ import { AppError } from '../../shared/src/errors.js';
 import { readProject } from './project.js';
 import { selectOrigin } from './origin.js';
 import { runData } from './data.js';
+import { checkForUpdates } from './update.js';
 
 const {values, positionals} = parseArgs({allowPositionals: true, options: {
   origin: {type: 'string'}, project: {type: 'string', default: '.'}, output: {type: 'string'},
@@ -17,6 +18,7 @@ const {values, positionals} = parseArgs({allowPositionals: true, options: {
 const [command, appId, dataAppId] = positionals;
 const notify = (s: string) => process.stderr.write(s + '\n');
 try {
+  await checkForUpdates(values['config-dir'], notify);
   if (values.help || !command) {
     process.stdout.write('cellapp <login|logout|deploy|apps|link|reset-key|delete|data> [app-id] [--origin https://console.cellapp.ai]\nDeploy: --project . --output dist [--build "npm run build"] [--namespace user-slug] [--slug app-slug] [--spa]\nLink: link <app-id> --project . --output dist\nData: data <plan|apply|status|verify|reconcile> [app-id] --project . [--manifest cellapp.data.json] [--allow-destructive]\nDefault origin: https://console.cellapp.ai\n');
   } else {
