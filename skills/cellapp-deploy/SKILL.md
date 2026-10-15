@@ -1,22 +1,21 @@
 ---
 name: cellapp-deploy
-description: Develop, update and deploy a static Cellapp app from the user's project. Set up the CLI when needed, guide browser authorization, and optionally manage supported application tables.
+description: Develop, update and deploy a static Cellapp app from the user's project. Run the published client on demand, guide browser authorization, and optionally manage supported application tables.
 ---
 
 # Develop and deploy a Cellapp application
 
-Use the official `cellapp` CLI for deployment and table operations. Installing this Skill does not install the CLI; set it up yourself when absent instead of sending the user to an installation guide. The public [Agent deployment instructions](https://cellapp.ai/deploy/AGENTS.md) provide the short deployment path; this Skill covers data and recovery in more detail. Use an origin supplied by the user, existing project configuration, or `CELLAPP_ORIGIN` when present; otherwise the CLI defaults to `https://console.cellapp.ai`. Preserve `ohmyapp.json` and `OHMYAPP_ORIGIN` migration behavior. Do not invent another origin or store a credential in the project.
+Use the official `cellapp` client for deployment and table operations. The Agent obtains and runs it; the user installs only this Skill. The public [Agent deployment instructions](https://cellapp.ai/deploy/AGENTS.md) provide the short deployment path; this Skill covers data and recovery in more detail. Use a custom origin supplied by the user or environment when present; otherwise the client defaults to `https://cellapp.ai` and migrates exact `https://console.cellapp.ai` project associations. The retired origin requires fresh browser authorization and its old token is never copied. Preserve `ohmyapp.json` and `OHMYAPP_ORIGIN` compatibility. Do not invent another origin or store a credential in the project.
 
-## Prepare the CLI
+## Run the published client
 
-Check whether `cellapp --help` works. If it does, use the existing CLI. If it is missing, check Node.js is at least 22.12 and npm is available, then run:
+Check Node.js is at least 22.12 and npm is available. In the project directory, verify the official published package with:
 
 ```sh
-npm install -g @cellapp/cli@latest
-cellapp --help
+npm exec --yes --package=@cellapp/cli@latest -- cellapp --help
 ```
 
-Perform installation yourself when the local environment permits. If global installation is blocked, verify with `npm exec --yes --package=@cellapp/cli@latest -- cellapp --help` and use the same `npm exec --yes --package=@cellapp/cli@latest -- cellapp` prefix for later commands. Do not ask the user to run setup commands as the default path. If Node.js is missing or unsupported, npm cannot fetch the package, or both invocation paths fail, explain the specific blocker and safe next step; do not use `sudo`, disable TLS checks or install from an unverified source. Continue only after CLI verification succeeds. Keep the CLI's own daily upgrade hint separate from the deployment result.
+Use the same `npm exec --yes --package=@cellapp/cli@latest -- cellapp` prefix for deployment, data and recovery commands below. npm fetches and caches the official package on demand; do not install it globally or ask the user to run setup commands. If Node.js is missing or unsupported, package retrieval fails, or help verification fails, report that exact blocker and stop. Do not use `sudo`, disable TLS checks or implement the upload protocol yourself. Keep the client's upgrade hint separate from the deployment result.
 
 ## Inspect
 
@@ -33,10 +32,10 @@ The versioned, non-secret [`cellapp.data.json`](examples/notes/cellapp.data.json
 A new project needs its first static deployment to create the application association in `cellapp.json`. Build and deploy the frontend once, then use the linked app and configured origin to apply the data manifest. Do not report the table-dependent page as ready until verification succeeds:
 
 ```sh
-cellapp data status --project <project>
-cellapp data plan --project <project>
-cellapp data apply --project <project>
-cellapp data verify --project <project>
+npm exec --yes --package=@cellapp/cli@latest -- cellapp data status --project <project>
+npm exec --yes --package=@cellapp/cli@latest -- cellapp data plan --project <project>
+npm exec --yes --package=@cellapp/cli@latest -- cellapp data apply --project <project>
+npm exec --yes --package=@cellapp/cli@latest -- cellapp data verify --project <project>
 ```
 
 The first manifest version is `1`; increase by exactly one. Inspect the plan and data version separately from the static release. Identical retries are safe; changed content at an applied version conflicts. For a table or column drop, set `allowDestructive: true` in the manifest and pass `--allow-destructive` to `data apply` after reviewing the plan and backup implications. After a timeout, run status and verify, then retry the same manifest if needed. Do not create a new version for a retry. Adding a non-null column to a populated table fails and rolls back; use a nullable column in this initial subset.
@@ -51,7 +50,7 @@ Use only `.from(table).select(columns)`, `.insert(values)`, `.update(values)`, `
 
 ## Publish and report
 
-Run `cellapp deploy --project <project> --output <output-directory> --build <existing-build-command>` (optionally adding `--namespace` and `--slug` on the first deployment), omitting `--build` for plain HTML. Add `--spa` only for client-side routes. The CLI performs device authorization when needed; provide the verification link and code, keep the command running while the user approves in the browser, and never request account passwords. Do not treat a chat reply as approval. Report publication only after `status: published`. Report data version/verification and static release separately, then provide the app URL.
+Run `npm exec --yes --package=@cellapp/cli@latest -- cellapp deploy --project <project> --output <output-directory> --build <existing-build-command>` (optionally adding `--namespace` and `--slug` on the first deployment), omitting `--build` for plain HTML. Add `--spa` only for client-side routes. The client performs device authorization when needed; provide the verification link and code, keep the command running while the user approves in the browser, and never request account passwords. Do not treat a chat reply as approval. Report publication only after `status: published`. Report data version/verification and static release separately, then provide the app URL.
 
 The first deployment returns an access key once. Give it only to the requesting owner; never put it in a URL, repository, issue or project state. Old keys can be redeemed only after platform login. `cellapp reset-key <app-id>` rotates future redemption; existing user grants remain active. Revoke an individual grant in the owner console. Use reset or delete only when requested. A lost initial key can be explicitly rotated.
 

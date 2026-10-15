@@ -20,13 +20,16 @@ const notify = (s: string) => process.stderr.write(s + '\n');
 try {
   await checkForUpdates(values['config-dir'], notify);
   if (values.help || !command) {
-    process.stdout.write('cellapp <login|logout|deploy|apps|link|reset-key|delete|data> [app-id] [--origin https://console.cellapp.ai]\nDeploy: --project . --output dist [--build "npm run build"] [--namespace user-slug] [--slug app-slug] [--spa]\nLink: link <app-id> --project . --output dist\nData: data <plan|apply|status|verify|reconcile> [app-id] --project . [--manifest cellapp.data.json] [--allow-destructive]\nDefault origin: https://console.cellapp.ai\n');
+    process.stdout.write('cellapp <login|logout|deploy|apps|link|reset-key|delete|data> [app-id] [--origin https://cellapp.ai]\nDeploy: --project . --output dist [--build "npm run build"] [--namespace user-slug] [--slug app-slug] [--spa]\nLink: link <app-id> --project . --output dist\nData: data <plan|apply|status|verify|reconcile> [app-id] --project . [--manifest cellapp.data.json] [--allow-destructive]\nDefault origin: https://cellapp.ai\n');
   } else {
     const projectPath = resolve(values.project);
     const newProject = await readJSON<Project>(join(projectPath, 'cellapp.json'));
     const legacyProject = await readJSON<Project>(join(projectPath, 'ohmyapp.json'));
     const origin = selectOrigin(values.origin, newProject, legacyProject, process.env);
-    const project = await readProject(projectPath);
+    const project = await readProject(projectPath, origin);
+    if (project && project.origin !== origin && (command === 'deploy' || command === 'link' || command === 'data')) {
+      throw new Error('Project belongs to another control origin; check --origin and CELLAPP_ORIGIN');
+    }
     const client = new Client(origin, values['config-dir']);
     await client.load();
     if (command === 'login') { await client.login(notify); process.stdout.write('{"authorized":true}\n'); }

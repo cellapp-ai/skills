@@ -1,12 +1,12 @@
 # Cellapp CLI and Agent Skill
 
-Cellapp publishes static HTML applications from a local project. The CLI builds and uploads only the chosen static output directory. The Agent Skill guides an AI agent through the same process. The default control origin is `https://console.cellapp.ai`; use `--origin` or `CELLAPP_ORIGIN` for another service.
+Cellapp publishes static HTML applications from a local project. The CLI builds and uploads only the chosen static output directory. The Agent Skill guides an AI agent through the same process. The default control origin is `https://cellapp.ai`; use `--origin` or `CELLAPP_ORIGIN` for another service.
 
 ## Ask an Agent to deploy
 
-Open the [Cellapp deployment guide](https://cellapp.ai/deploy), copy its one-request prompt, and paste it into the AI coding tool working on your project. The Agent reads the [machine-readable instructions](https://cellapp.ai/deploy/AGENTS.md), installs and verifies the CLI when needed, builds your static frontend, and publishes it. You only need to approve the device authorization in your browser when prompted. The Agent should give you the published URL and any remaining access step.
+Open the [Cellapp deployment guide](https://cellapp.ai/deploy), copy its one-request prompt, and paste it into the AI coding tool working on your project. The Agent reads the [machine-readable instructions](https://cellapp.ai/deploy/AGENTS.md), runs the published client on demand, builds your static frontend, and publishes it. You only need to approve the device authorization in your browser when prompted. The Agent should give you the published URL and any remaining access step.
 
-For Agent tools that support Skills, you can also install the [Cellapp deployment Skill](skills/cellapp-deploy/SKILL.md) with `npx skills add cellapp-ai/skills`. The Skill gives the Agent additional guidance for application tables and recovery. Its installation does not install the CLI; the Agent handles that during deployment.
+For Agent tools that support Skills, you can also install the [Cellapp deployment Skill](skills/cellapp-deploy/SKILL.md) with `npx skills add cellapp-ai/skills`. The Skill gives the Agent additional guidance for application tables and recovery. No separate CLI installation is needed for this flow.
 
 ## Manual install
 

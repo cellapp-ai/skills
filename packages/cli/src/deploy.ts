@@ -46,7 +46,7 @@ export async function collect(output: string, limits: Limits): Promise<Entry[]> 
 export async function deploy(client: Client, directory: string, options: {output?: string; build?: string; name?: string; namespace?: string; slug?: string; spa?: boolean}, notify: (s: string) => void) {
   const projectPath = resolve(directory);
   const configPath = join(projectPath, 'cellapp.json');
-  let project = await readProject(projectPath);
+  let project = await readProject(projectPath, client.origin);
   if (project && project.origin !== client.origin) throw new Error('Project belongs to another control origin');
   if (project?.appId && (options.namespace !== undefined || options.slug !== undefined)) {
     throw new Error('CLI slugs are set only when creating an application; change existing slugs in the owner console');

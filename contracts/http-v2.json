@@ -1,6 +1,6 @@
 {
   "contractVersion": "2.0.0",
-  "baseUrl": "HTTPS control origin; defaults to https://console.cellapp.ai when no explicit, project, or environment origin is set",
+  "baseUrl": "HTTPS control origin; defaults to https://cellapp.ai when no explicit, project, or environment origin is set",
   "authorization": "Bearer deployment credential, except device authorization endpoints",
   "errorEnvelope": {
     "required": [
