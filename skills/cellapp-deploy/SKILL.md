@@ -5,6 +5,8 @@ description: Develop, update and deploy a static Cellapp app from the user's pro
 
 # Develop and deploy a Cellapp application
 
+[简体中文版](SKILL.zh-CN.md)
+
 Use the official `cellapp` client for deployment and table operations. The current client uses `/auth/device` for browser-approved login and `/api/control/v1/*` for Bearer management; keep using CLI commands rather than constructing HTTP requests. Older root-path CLI requests remain supported during migration. The Agent obtains and runs it; the user installs only this Skill. The public [Agent deployment instructions](https://cellapp.ai/deploy/AGENTS.md) provide the short deployment path; this Skill covers data and recovery in more detail. Use a custom origin supplied by the user or environment when present; otherwise the client defaults to `https://cellapp.ai` and migrates exact `https://console.cellapp.ai` project associations. The retired origin requires fresh browser authorization and its old token is never copied. Preserve `ohmyapp.json` and `OHMYAPP_ORIGIN` compatibility. Do not invent another origin or store a credential in the project.
 
 ## Run the published client
@@ -20,6 +22,10 @@ Use the same `npm exec --yes --package=@cellapp/cli@latest -- cellapp` prefix fo
 ## Inspect
 
 Read `cellapp.json`, the existing build command, static output directory, and `cellapp.data.json` if present. Reuse the application association on updates. For plain HTML omit the build command. Ask only for an ambiguous output or build setting. Cellapp hosts static frontend code; do not deploy SSR, a custom server, private service key, direct PostgreSQL credential, or arbitrary SQL. Bundled frontend values are readable by admitted visitors.
+
+## Develop the interface when needed
+
+If the user asks you to develop or substantially redesign an app without UI direction, read the [user-app design guidance](https://cellapp.ai/deploy/app-design.md) and apply its suggestions without asking the user to opt in. Explicit user design instructions and established project conventions take precedence. Choose a framework and styling approach that fit the app; do not impose a Cellapp look or a particular library. If the guide is unavailable, continue with a coherent visual hierarchy, responsive layout, accessible controls, and a review of the built interface. A deploy-only request does not require redesigning an existing app.
 
 ## Choose an application reference
 
