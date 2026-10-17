@@ -42,10 +42,10 @@ test('data plan and apply keep destructive approval explicit and report denial',
     };
     const project = {origin: client.origin, appId, name: 'Test', output: 'dist', spa: false, createRequestId: 'b'.repeat(32)};
     await assert.rejects(runData(client, 'apply', directory, project), /--allow-destructive/);
-    assert.deepEqual(seen, [`/apps/${appId}/data/plan`]);
+    assert.deepEqual(seen, [`/api/control/v1/apps/${appId}/data/plan`]);
     const result = await runData(client, 'apply', directory, project, undefined, undefined, true) as {tables: {digest: string}};
     assert.equal(result.tables.digest, 'f'.repeat(64));
-    assert(seen.includes(`/apps/${appId}/data/apply`));
+    assert(seen.includes(`/api/control/v1/apps/${appId}/data/apply`));
     await assert.rejects(runData(client, 'status', directory, project), error => error instanceof AppError && error.status === 403);
     await assert.rejects(runData(client, 'plan', directory, undefined), /Link a project/);
   } finally {

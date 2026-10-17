@@ -1,3 +1,4 @@
+import { controlApp } from './paths.js';
 import { join, resolve } from 'node:path';
 import { Client, readJSON } from './client.js';
 import type { Project } from './deploy.js';
@@ -21,7 +22,7 @@ export async function runData(client: Client, action: string | undefined, projec
   const operation = action as DataAction;
   const appID = explicitAppID ?? project?.appId;
   if (!appID || !/^[a-f0-9]{32}$/.test(appID)) throw new Error('Link a project or provide a valid app ID');
-  const path = `/apps/${appID}/data`;
+  const path = `${controlApp(appID)}/data`;
   if (operation === 'status') return {appId: appID, status: await client.request(path)};
   if (operation === 'reconcile') return {appId: appID, reconciliation: await client.request(`${path}/reconcile`, 'POST', {})};
   if (operation === 'verify') return {appId: appID, verification: await client.request(`${path}/verify`, 'POST')};

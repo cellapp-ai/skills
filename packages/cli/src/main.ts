@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { CONTROL_API, controlApp } from './paths.js';
 import { parseArgs } from 'node:util';
 import { resolve, join } from 'node:path';
 import { Client, randomKey, requestID, readJSON, saveJSON } from './client.js';
@@ -38,15 +39,15 @@ try {
       if (!client.token) await client.login(notify);
       let result: unknown;
       if (command === 'deploy') result = await deploy(client, projectPath, values, notify);
-      else if (command === 'apps') result = await client.request('/apps');
+      else if (command === 'apps') result = await client.request(`${CONTROL_API}/apps`);
       else if (command === 'data') result = await runData(client, appId, projectPath, project, dataAppId, values.manifest, values['allow-destructive']);
       else {
         if (!appId || !/^[a-f0-9]{32}$/.test(appId)) throw new Error('A valid app ID is required');
-        if (command === 'reset-key') { const key = randomKey(); await client.request(`/apps/${appId}/key`, 'POST', {key}); result = {accessKey: key}; }
-        else if (command === 'delete') result = await client.request(`/apps/${appId}`, 'DELETE');
+        if (command === 'reset-key') { const key = randomKey(); await client.request(`${controlApp(appId)}/key`, 'POST', {key}); result = {accessKey: key}; }
+        else if (command === 'delete') result = await client.request(controlApp(appId), 'DELETE');
         else if (command === 'link') {
           if (project && project.origin !== client.origin) throw new Error('Project belongs to another control origin');
-          const apps = await client.request<{id: string; name: string; namespace: string; slug: string}[]>('/apps');
+          const apps = await client.request<{id: string; name: string; namespace: string; slug: string}[]>(`${CONTROL_API}/apps`);
           const app = apps.find(a => a.id === appId);
           if (!app) throw new Error('Application not owned by this credential');
           if (project?.appId && project.appId !== appId) throw new Error('Project is already linked to another application');

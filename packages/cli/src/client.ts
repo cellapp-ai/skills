@@ -3,6 +3,7 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { createHash, randomBytes } from 'node:crypto';
 import { AppError } from '../../shared/src/errors.js';
+import { CURRENT_CREDENTIAL, DEVICE_AUTH, DEVICE_POLL } from './paths.js';
 
 export const randomKey = () => randomBytes(32).toString('hex');
 export const requestID = () => randomBytes(16).toString('hex');
@@ -63,14 +64,14 @@ export class Client {
     return value as T;
   }
   async login(notify: (message: string) => void) {
-    const auth = await this.request<{deviceSecret: string; userCode: string; verificationUri: string; interval: number; expiresIn: number}>('/device-authorizations', 'POST', {});
+    const auth = await this.request<{deviceSecret: string; userCode: string; verificationUri: string; interval: number; expiresIn: number}>(DEVICE_AUTH, 'POST', {});
     notify(`请在浏览器打开 ${auth.verificationUri}\n核对授权码：${auth.userCode}`);
     const deadline = Date.now() + auth.expiresIn * 1000;
     let interval = auth.interval * 1000;
     while (Date.now() < deadline) {
       await new Promise(resolve => setTimeout(resolve, interval));
       try {
-        const credential = await this.request<{token: string; expiresIn: number}>('/device-authorizations/poll', 'POST', {deviceSecret: auth.deviceSecret});
+        const credential = await this.request<{token: string; expiresIn: number}>(DEVICE_POLL, 'POST', {deviceSecret: auth.deviceSecret});
         await saveJSON(this.credentialFile, {...credential, origin: this.origin}, true);
         this.token = credential.token;
         return;
@@ -83,7 +84,7 @@ export class Client {
     throw new AppError(400, 'expired_token', 'Authorization expired; run login again');
   }
   async logout() {
-    try { if (this.token) await this.request('/credentials/current', 'DELETE'); }
+    try { if (this.token) await this.request(CURRENT_CREDENTIAL, 'DELETE'); }
     catch (e) { if (!(e instanceof AppError && e.status === 401)) throw e; }
     await unlink(this.credentialFile).catch((e: NodeJS.ErrnoException) => { if (e.code !== 'ENOENT') throw e; });
     if (this.legacyCredentialFile) {

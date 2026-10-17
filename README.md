@@ -62,4 +62,4 @@ npm run check:boundary
 npm pack --dry-run --json
 ```
 
-The [public HTTP v2 contract](contracts/http-v2.json) describes the CLI, application access, and data boundary. [v1](contracts/http-v1.json) remains for older static-deploy clients. The CLI and Skill are MIT licensed; see [LICENSE](LICENSE). Contributions follow [CONTRIBUTING.md](CONTRIBUTING.md), and security reports follow [SECURITY.md](SECURITY.md).
+The [public HTTP v3 contract](contracts/http-v3.json) describes the current CLI paths and responses. Login uses `/auth/device` and `/auth/device/poll`; logout revokes `/auth/credentials/current`; Bearer management uses `/api/control/v1/*`. These paths work with the selected HTTPS control origin. The [v2](contracts/http-v2.json) root paths remain available for older CLI clients, and [v1](contracts/http-v1.json) records the earlier static-deploy contract. App-host `/_cellapp/*` and `/rest/v1/*` use visitor access checks, separate from the CLI credential. The CLI and Skill are MIT licensed; see [LICENSE](LICENSE). Contributions follow [CONTRIBUTING.md](CONTRIBUTING.md), and security reports follow [SECURITY.md](SECURITY.md).

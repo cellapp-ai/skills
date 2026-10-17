@@ -1,3 +1,4 @@
+import { CONTROL_API, controlApp } from './paths.js';
 import { lstat, readdir, readFile, realpath, unlink } from 'node:fs/promises';
 import { resolve, relative, join, isAbsolute } from 'node:path';
 import { spawn } from 'node:child_process';
@@ -62,7 +63,7 @@ export async function deploy(client: Client, directory: string, options: {output
   const actualProject = await realpath(projectPath);
   const actualRelative = relative(actualProject, actualOutput);
   ensure(!isAbsolute(actualRelative) && actualRelative !== '..' && !actualRelative.startsWith('../'), 400, 'invalid_output', 'Output resolves outside the project');
-  const limits = await client.request<Limits>('/limits');
+  const limits = await client.request<Limits>(`${CONTROL_API}/limits`);
   const files = await collect(outPath, limits);
   project = {...project, origin: client.origin, name: options.name ?? project?.name ?? 'My app', namespace: options.namespace ?? project?.namespace, slug: options.slug ?? project?.slug, output, build: command, spa: options.spa ?? project?.spa ?? false, createRequestId: project?.createRequestId ?? requestID()};
   const keyPath = `${client.credentialFile}.create-${project.createRequestId}`;
@@ -74,7 +75,7 @@ export async function deploy(client: Client, directory: string, options: {output
     await saveJSON(configPath, project);
     const body = {name: project.name, key: initialKey, requestId: project.createRequestId,
       ...(project.namespace ? {namespace: project.namespace} : {}), ...(project.slug ? {slug: project.slug} : {})};
-    const create = () => client.request<App>('/apps', 'POST', body);
+    const create = () => client.request<App>(`${CONTROL_API}/apps`, 'POST', body);
     let app: App;
     try { app = await create(); } catch (e) {
       if (e instanceof AppError) {
@@ -89,15 +90,15 @@ export async function deploy(client: Client, directory: string, options: {output
     project.appId = app.id;
     await saveJSON(configPath, project);
   }
-  const apps = await client.request<App[]>('/apps');
+  const apps = await client.request<App[]>(`${CONTROL_API}/apps`);
   const app = apps.find(a => a.id === project!.appId);
   ensure(app, 404, 'app_not_found', 'Linked app was deleted or belongs to another owner');
-  if (app.dataState !== 'ready') await client.request(`/apps/${app.id}/data/reconcile`, 'POST', {});
+  if (app.dataState !== 'ready') await client.request(`${controlApp(app.id)}/data/reconcile`, 'POST', {});
   const fingerprint = sha256(JSON.stringify({files, spa: project.spa}));
   if (project.pending && project.pending.fingerprint !== fingerprint) project.pending = undefined;
   project.pending ??= {requestId: requestID(), fingerprint, baseVersion: app.activeDeployment};
   await saveJSON(configPath, project);
-  const base = `/apps/${app.id}/deployments`;
+  const base = `${controlApp(app.id)}/deployments`;
   const d = await client.request<{id: string}>(base, 'POST', {manifest: files, requestId: project.pending.requestId, baseVersion: project.pending.baseVersion, spa: project.spa});
   const status = await client.request<{status: string; uploaded: string[]}>(`${base}/${d.id}`);
   if (status.status !== 'published') {

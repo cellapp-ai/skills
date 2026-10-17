@@ -47,7 +47,7 @@ test('expired owner credentials fail closed and can be revoked locally', async (
     await saveJSON(client.credentialFile, {token: 'expired-token', origin: DEFAULT_ORIGIN}, true);
     await client.load();
     globalThis.fetch = async () => Response.json({error: 'authorization_required', message: 'Credential expired'}, {status: 401});
-    await assert.rejects(client.request('/apps'), /Credential expired/);
+    await assert.rejects(client.request('/api/control/v1/apps'), /Credential expired/);
     await client.logout();
     await assert.rejects(readFile(client.credentialFile), {code: 'ENOENT'});
   } finally { globalThis.fetch = originalFetch; await rm(root, {recursive: true, force: true}); }
@@ -140,9 +140,9 @@ test('new-origin credential is shared across projects but cannot replace an app 
     await saveJSON(join(project, 'cellapp.json'), association);
     let created = false;
     second.request = async (path: string, method = 'GET') => {
-      if (path === '/limits') return {files: 10, fileBytes: 1000, deploymentBytes: 1000} as never;
-      if (path === '/apps' && method === 'GET') return [] as never;
-      if (path === '/apps' && method === 'POST') created = true;
+      if (path === '/api/control/v1/limits') return {files: 10, fileBytes: 1000, deploymentBytes: 1000} as never;
+      if (path === '/api/control/v1/apps' && method === 'GET') return [] as never;
+      if (path === '/api/control/v1/apps' && method === 'POST') created = true;
       throw new Error('unexpected request');
     };
     await assert.rejects(deploy(second, project, {}, () => {}), /deleted or belongs to another owner/);

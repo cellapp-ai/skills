@@ -8,8 +8,26 @@ import { deploy } from '../packages/cli/src/deploy.js';
 import { runData } from '../packages/cli/src/data.js';
 import { AppError } from '../packages/shared/src/errors.js';
 
-interface Operation { method: string; path: string; successStatus: number; responseRequired?: string[]; responseType?: string }
-const contract = JSON.parse(await readFile(new URL('../contracts/http-v2.json', import.meta.url), 'utf8')) as {operations: Operation[]};
+interface Operation { method: string; path: string; successStatus: number; responseRequired?: string[]; responseType?: string; errors?: string[] }
+const contract = JSON.parse(await readFile(new URL('../contracts/http-v3.json', import.meta.url), 'utf8')) as {operations: Operation[]};
+
+test('v3 retains all 17 v2 operations with canonical paths and unchanged results', async () => {
+  const previous = JSON.parse(await readFile(new URL('../contracts/http-v2.json', import.meta.url), 'utf8')) as {operations: Operation[]};
+  assert.equal(contract.operations.length, 17);
+  assert.equal(previous.operations.length, 17);
+  for (const [index, old] of previous.operations.entries()) {
+    const current = contract.operations[index]!;
+    const path = old.path === '/device-authorizations' ? '/auth/device'
+      : old.path === '/device-authorizations/poll' ? '/auth/device/poll'
+      : old.path === '/credentials/current' ? '/auth/credentials/current'
+      : `/api/control/v1${old.path}`;
+    assert.equal(current.path, path);
+    assert.equal(current.method, old.method);
+    assert.equal(current.successStatus, old.successStatus);
+    assert.deepEqual(current.responseRequired, old.responseRequired);
+    assert.deepEqual(current.errors, old.errors);
+  }
+});
 
 function operationFor(method: string, path: string) {
   return contract.operations.find(item => item.method === method && new RegExp(`^${item.path.replace(/\{[^}]+\}/g, '[^/]+')}$`).test(path));
@@ -35,12 +53,12 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
     seen.add(`${method} ${operation.path}`);
     const body = init?.body && method !== 'PUT' ? JSON.parse(String(init.body)) as Record<string, unknown> : {};
     let data: unknown;
-    if (path === '/device-authorizations') data = {deviceSecret: 'secret', userCode: 'CODE', verificationUri: 'https://control.example/device', interval: 0, expiresIn: 10};
-    else if (path === '/device-authorizations/poll') data = {token: 'credential', credentialId: 'c'.repeat(32), expiresIn: 100};
-    else if (path === '/credentials/current') data = {revoked: true};
-    else if (path === '/limits') data = {files: 10, fileBytes: 1000, deploymentBytes: 1000, monthlyVisitors: 1000};
-    else if (path === '/apps' && method === 'GET') data = app ? [app] : [];
-    else if (path === '/apps' && method === 'POST') {
+    if (path === '/auth/device') data = {deviceSecret: 'secret', userCode: 'CODE', verificationUri: 'https://control.example/device', interval: 0, expiresIn: 10};
+    else if (path === '/auth/device/poll') data = {token: 'credential', credentialId: 'c'.repeat(32), expiresIn: 100};
+    else if (path === '/auth/credentials/current') data = {revoked: true};
+    else if (path === '/api/control/v1/limits') data = {files: 10, fileBytes: 1000, deploymentBytes: 1000, monthlyVisitors: 1000};
+    else if (path === '/api/control/v1/apps' && method === 'GET') data = app ? [app] : [];
+    else if (path === '/api/control/v1/apps' && method === 'POST') {
       assert.equal(body.namespace, 'demo');
       assert.equal(body.slug, 'test');
       app = {id: appId, name: String(body.name), namespace: 'demo', slug: 'test', aliasUrl: 'https://control.example/a/demo/test', url: 'https://test-demo.apps.example', activeDeployment: null, suspended: false, visibility: 'restricted', dataState: 'ready'};
@@ -51,13 +69,13 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
         return new Response(JSON.stringify({error: 'app_data_not_ready', message: 'retry', details: {appId}}), {status: 503, headers: {'Content-Type': 'application/json'}});
       }
       data = app;
-    } else if (path === `/apps/${appId}/data`) data = {state: 'ready', errorCode: null, version: 1, digest: 'f'.repeat(64)};
-    else if (path === `/apps/${appId}/data/reconcile`) { app!.dataState = 'ready'; data = {ready: true}; }
-    else if (path === `/apps/${appId}/data/verify`) data = {ready: true, version: 1, digest: 'f'.repeat(64)};
-    else if (path === `/apps/${appId}/data/plan` || path === `/apps/${appId}/data/apply`) data = {version: 1, digest: 'f'.repeat(64), operations: ['create table notes'], requiresDestructive: false, alreadyApplied: false};
-    else if (path === `/apps/${appId}/key`) data = {reset: true};
-    else if (path === `/apps/${appId}`) { app = undefined; data = {deleted: true}; }
-    else if (path === `/apps/${appId}/deployments` && method === 'POST') {
+    } else if (path === `/api/control/v1/apps/${appId}/data`) data = {state: 'ready', errorCode: null, version: 1, digest: 'f'.repeat(64)};
+    else if (path === `/api/control/v1/apps/${appId}/data/reconcile`) { app!.dataState = 'ready'; data = {ready: true}; }
+    else if (path === `/api/control/v1/apps/${appId}/data/verify`) data = {ready: true, version: 1, digest: 'f'.repeat(64)};
+    else if (path === `/api/control/v1/apps/${appId}/data/plan` || path === `/api/control/v1/apps/${appId}/data/apply`) data = {version: 1, digest: 'f'.repeat(64), operations: ['create table notes'], requiresDestructive: false, alreadyApplied: false};
+    else if (path === `/api/control/v1/apps/${appId}/key`) data = {reset: true};
+    else if (path === `/api/control/v1/apps/${appId}`) { app = undefined; data = {deleted: true}; }
+    else if (path === `/api/control/v1/apps/${appId}/deployments` && method === 'POST') {
       const requestId = String(body.requestId);
       deployment = deploymentsByRequest.get(requestId);
       if (!deployment) {
@@ -101,7 +119,7 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
     assert.ok('accessKey' in first);
     assert.equal(first.accessKey, createdKey);
     await assert.rejects(stat(keyPath), {code: 'ENOENT'});
-    assert.equal((await client.request<unknown[]>('/apps')).length, 1);
+    assert.equal((await client.request<unknown[]>('/api/control/v1/apps')).length, 1);
     await writeFile(join(project, 'dist', 'index.html'), '<h1>Updated</h1>');
     const original = client.request.bind(client);
     let interrupted = false;
@@ -123,13 +141,13 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
     assert.ok((await runData(client, 'apply', project, association)));
     assert.ok((await runData(client, 'status', project, association)));
     assert.ok((await runData(client, 'verify', project, association)));
-    assert.deepEqual(await client.request(`/apps/${appId}/key`, 'POST', {key: 'f'.repeat(64)}), {reset: true});
-    assert.deepEqual(await client.request(`/apps/${appId}`, 'DELETE'), {deleted: true});
+    assert.deepEqual(await client.request(`/api/control/v1/apps/${appId}/key`, 'POST', {key: 'f'.repeat(64)}), {reset: true});
+    assert.deepEqual(await client.request(`/api/control/v1/apps/${appId}`, 'DELETE'), {deleted: true});
     await client.logout();
     assert.equal(client.token, undefined);
     assert.equal(seen.size, contract.operations.length);
     globalThis.fetch = async () => new Response(JSON.stringify({error: 'authorization_required', message: 'Run login', details: null}), {status: 401, headers: {'Content-Type': 'application/json'}});
-    await assert.rejects(client.request('/apps'), error => error instanceof AppError && error.status === 401 && error.code === 'authorization_required');
+    await assert.rejects(client.request('/api/control/v1/apps'), error => error instanceof AppError && error.status === 401 && error.code === 'authorization_required');
     const persisted = JSON.parse(await readFile(join(project, 'cellapp.json'), 'utf8'));
     assert.equal(persisted.appId, appId);
     assert.equal(persisted.pending, undefined);
