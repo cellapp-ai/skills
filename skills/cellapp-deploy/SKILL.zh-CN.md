@@ -19,6 +19,10 @@ npm exec --yes --package=@cellapp/cli@latest -- cellapp --help
 
 下文的部署、数据和恢复命令都使用相同的 `npm exec --yes --package=@cellapp/cli@latest -- cellapp` 前缀。npm 会按需获取并缓存官方包；不要全局安装，也不要要求用户执行安装命令。如果 Node.js 缺失或版本不受支持、包获取失败或帮助命令验证失败，报告具体障碍并停止。不要使用 `sudo`、关闭 TLS 验证，或自行实现上传协议。客户端的升级提示应与部署结果分开说明。
 
+## 在耗时工作前完成授权
+
+验证客户端并确定项目控制来源后，在长时间开发或构建前运行 `npm exec --yes --package=@cellapp/cli@latest -- cellapp apps --project <project>` 检查授权。已有凭证会被复用；没有凭证时会启动设备授权。验证链接和代码出现后立即交给用户，并在用户通过浏览器批准期间保持命令运行。若已有凭证返回 401，使用相同 npm 前缀、项目和来源运行 `cellapp login`，再重试 `cellapp apps`。若验证码在批准前过期，等用户准备好后重新登录并发出新链接和代码；不要把过期码留作下一步。不要索取密码，也不要把聊天回复当作浏览器批准。授权成功后再开始耗时工作。
+
 ## 检查项目
 
 读取已有的 `cellapp.json`、构建命令、静态输出目录，以及可能存在的 `cellapp.data.json`。更新应用时复用现有关联。无需构建的普通 HTML 省略构建命令。只有输出目录或构建设置不明确时才询问。Cellapp 托管静态前端代码；不要部署 SSR、自定义服务器、私密服务密钥、直连 PostgreSQL 的凭证或任意 SQL。获准访问的访客可以读取打包后的前端内容。
@@ -56,7 +60,7 @@ npm exec --yes --package=@cellapp/cli@latest -- cellapp data verify --project <p
 
 ## 发布与报告
 
-运行 `npm exec --yes --package=@cellapp/cli@latest -- cellapp deploy --project <project> --output <output-directory> --build <existing-build-command>`；首次部署时可选传入 `--namespace` 和 `--slug`。普通 HTML 如果不需要构建，则省略 `--build`。仅当应用使用客户端路由时添加 `--spa`。需要设备授权时，由客户端发起流程；将验证链接和代码交给用户，在用户通过浏览器批准期间保持命令运行，不要索取账号密码。聊天中的回复不等于批准。仅在返回 `status: published` 后报告发布成功。数据版本及其验证结果应与静态版本分开报告，最后提供应用地址。
+运行 `npm exec --yes --package=@cellapp/cli@latest -- cellapp deploy --project <project> --output <output-directory> --build <existing-build-command>`；首次部署时可选传入 `--namespace` 和 `--slug`。普通 HTML 如果不需要构建，则省略 `--build`。仅当应用使用客户端路由时添加 `--spa`。如果部署时仍启动设备授权，立即将新的验证链接和代码交给用户，并在用户通过浏览器批准期间保持命令运行；若验证码过期，取得新码后再重试。仅在返回 `status: published` 后报告发布成功。数据版本及其验证结果应与静态版本分开报告，最后提供应用地址。
 
 首次部署只返回一次访问密钥。仅交给提出请求的所有者；不要写入 URL、仓库、Issue 或项目状态。旧密钥只能在平台登录后兑换。`cellapp reset-key <app-id>` 会轮换后续兑换所用密钥，已有用户授权仍有效。可在所有者控制台撤销单个授权。仅在用户要求时才重置密钥或删除应用。初始密钥丢失后，可以按明确要求进行轮换。
 

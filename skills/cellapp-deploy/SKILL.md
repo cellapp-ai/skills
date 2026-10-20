@@ -19,6 +19,10 @@ npm exec --yes --package=@cellapp/cli@latest -- cellapp --help
 
 Use the same `npm exec --yes --package=@cellapp/cli@latest -- cellapp` prefix for deployment, data and recovery commands below. npm fetches and caches the official package on demand; do not install it globally or ask the user to run setup commands. If Node.js is missing or unsupported, package retrieval fails, or help verification fails, report that exact blocker and stop. Do not use `sudo`, disable TLS checks or implement the upload protocol yourself. Keep the client's upgrade hint separate from the deployment result.
 
+## Authorize before long work
+
+After verifying the client and resolving the project's control origin, check authorization before lengthy development or builds with `npm exec --yes --package=@cellapp/cli@latest -- cellapp apps --project <project>`. It reuses a saved credential or starts device authorization when none exists. Immediately give the user the verification link and code and keep the command running while they approve in the browser. If a saved credential returns 401, run `cellapp login` with the same npm prefix, project and origin, then retry `cellapp apps`. If a code expires before approval, wait until the user is ready, run login again and send the fresh link and code; never leave the expired code as the next step. Do not request a password or treat a chat reply as browser approval. Continue the long work only after authorization succeeds.
+
 ## Inspect
 
 Read `cellapp.json`, the existing build command, static output directory, and `cellapp.data.json` if present. Reuse the application association on updates. For plain HTML omit the build command. Ask only for an ambiguous output or build setting. Cellapp hosts static frontend code; do not deploy SSR, a custom server, private service key, direct PostgreSQL credential, or arbitrary SQL. Bundled frontend values are readable by admitted visitors.
@@ -56,7 +60,7 @@ Use only `.from(table).select(columns)`, `.insert(values)`, `.update(values)`, `
 
 ## Publish and report
 
-Run `npm exec --yes --package=@cellapp/cli@latest -- cellapp deploy --project <project> --output <output-directory> --build <existing-build-command>` (optionally adding `--namespace` and `--slug` on the first deployment), omitting `--build` for plain HTML. Add `--spa` only for client-side routes. The client performs device authorization when needed; provide the verification link and code, keep the command running while the user approves in the browser, and never request account passwords. Do not treat a chat reply as approval. Report publication only after `status: published`. Report data version/verification and static release separately, then provide the app URL.
+Run `npm exec --yes --package=@cellapp/cli@latest -- cellapp deploy --project <project> --output <output-directory> --build <existing-build-command>` (optionally adding `--namespace` and `--slug` on the first deployment), omitting `--build` for plain HTML. Add `--spa` only for client-side routes. If deployment still starts device authorization, provide the new verification link and code promptly and keep the command running while the user approves in the browser; if it expires, obtain a fresh code before retrying. Report publication only after `status: published`. Report data version/verification and static release separately, then provide the app URL.
 
 The first deployment returns an access key once. Give it only to the requesting owner; never put it in a URL, repository, issue or project state. Old keys can be redeemed only after platform login. `cellapp reset-key <app-id>` rotates future redemption; existing user grants remain active. Revoke an individual grant in the owner console. Use reset or delete only when requested. A lost initial key can be explicitly rotated.
 
