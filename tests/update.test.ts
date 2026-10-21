@@ -36,7 +36,7 @@ test('first invocation each local day checks npm once without credentials', asyn
   const requests: Array<{url: string; init: RequestInit}> = [];
   const fetcher = (async (url: string, init: RequestInit) => {
     requests.push({url, init});
-    return Response.json({version: '0.3.1'});
+    return Response.json({version: '0.3.2'});
   }) as typeof fetch;
   try {
     const day = new Date(2026, 9, 14, 10);
