@@ -14,6 +14,9 @@ const manifest = {version: 1, tables: [{name: 'notes', columns: [{name: 'id', ty
 
 test('data manifest rejects unsupported SQL and invalid own-row policies', () => {
   assert.equal(parseDataManifest(manifest).tables[0]?.name, 'notes');
+  const anonymous = {...manifest, tables: [{...manifest.tables[0], policies: {...manifest.tables[0]!.policies, anonymousInsert: 'all', anonymousSelect: 'none'}}]};
+  assert.equal(parseDataManifest(anonymous).tables[0]?.policies.anonymousInsert, 'all');
+  assert.throws(() => parseDataManifest({...manifest, tables: [{...manifest.tables[0], policies: {...manifest.tables[0]!.policies, anonymousSelect: 'own-rows'}}]}), /anonymous data policy/);
   assert.throws(() => parseDataManifest({...manifest, tables: [{...manifest.tables[0], name: 'notes;drop'}]}), /identifier/);
   assert.throws(() => parseDataManifest({...manifest, tables: [{...manifest.tables[0], columns: [{name: 'id', type: 'serial'}]}]}), /column/);
   assert.throws(() => parseDataManifest({...manifest, tables: [{...manifest.tables[0], policies: {select: 'own-rows'}}]}), /owner/);

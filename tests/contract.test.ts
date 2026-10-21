@@ -13,14 +13,15 @@ const contract = JSON.parse(await readFile(new URL('../contracts/http-v3.json', 
 
 test('v3 retains all 17 v2 operations with canonical paths and unchanged results', async () => {
   const previous = JSON.parse(await readFile(new URL('../contracts/http-v2.json', import.meta.url), 'utf8')) as {operations: Operation[]};
-  assert.equal(contract.operations.length, 17);
+  assert.equal(contract.operations.length, 19);
   assert.equal(previous.operations.length, 17);
-  for (const [index, old] of previous.operations.entries()) {
-    const current = contract.operations[index]!;
+  for (const old of previous.operations) {
     const path = old.path === '/device-authorizations' ? '/auth/device'
       : old.path === '/device-authorizations/poll' ? '/auth/device/poll'
       : old.path === '/credentials/current' ? '/auth/credentials/current'
       : `/api/control/v1${old.path}`;
+    const current = contract.operations.find(item => item.path === path && item.method === old.method);
+    assert.ok(current, `missing compatible operation ${old.method} ${path}`);
     assert.equal(current.path, path);
     assert.equal(current.method, old.method);
     assert.equal(current.successStatus, old.successStatus);
@@ -69,7 +70,8 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
         return new Response(JSON.stringify({error: 'app_data_not_ready', message: 'retry', details: {appId}}), {status: 503, headers: {'Content-Type': 'application/json'}});
       }
       data = app;
-    } else if (path === `/api/control/v1/apps/${appId}/data`) data = {state: 'ready', errorCode: null, version: 1, digest: 'f'.repeat(64)};
+    } else if (path === `/api/control/v1/apps/${appId}/anonymous`) data = {pages: true, read: false, write: true, operatorWritesEnabled: false, effectiveWrite: false};
+    else if (path === `/api/control/v1/apps/${appId}/data`) data = {state: 'ready', errorCode: null, version: 1, digest: 'f'.repeat(64)};
     else if (path === `/api/control/v1/apps/${appId}/data/reconcile`) { app!.dataState = 'ready'; data = {ready: true}; }
     else if (path === `/api/control/v1/apps/${appId}/data/verify`) data = {ready: true, version: 1, digest: 'f'.repeat(64)};
     else if (path === `/api/control/v1/apps/${appId}/data/plan` || path === `/api/control/v1/apps/${appId}/data/apply`) data = {version: 1, digest: 'f'.repeat(64), operations: ['create table notes'], requiresDestructive: false, alreadyApplied: false};
@@ -142,6 +144,8 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
     assert.ok((await runData(client, 'status', project, association)));
     assert.ok((await runData(client, 'verify', project, association)));
     assert.deepEqual(await client.request(`/api/control/v1/apps/${appId}/key`, 'POST', {key: 'f'.repeat(64)}), {reset: true});
+    assert.ok(await client.request(`/api/control/v1/apps/${appId}/anonymous`));
+    assert.ok(await client.request(`/api/control/v1/apps/${appId}/anonymous`, 'PUT', {pages: true, read: false, write: true}));
     assert.deepEqual(await client.request(`/api/control/v1/apps/${appId}`, 'DELETE'), {deleted: true});
     await client.logout();
     assert.equal(client.token, undefined);

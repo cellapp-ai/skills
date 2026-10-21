@@ -151,6 +151,45 @@
       ]
     },
     {
+      "method": "GET",
+      "path": "/api/control/v1/apps/{app}/anonymous",
+      "successStatus": 200,
+      "responseRequired": [
+        "pages",
+        "read",
+        "write",
+        "operatorWritesEnabled",
+        "effectiveWrite"
+      ],
+      "errors": [
+        "app_not_found",
+        "authorization_required"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/control/v1/apps/{app}/anonymous",
+      "requestRequired": [
+        "pages",
+        "read",
+        "write"
+      ],
+      "successStatus": 200,
+      "responseRequired": [
+        "pages",
+        "read",
+        "write",
+        "operatorWritesEnabled",
+        "effectiveWrite"
+      ],
+      "errors": [
+        "app_not_found",
+        "authorization_required",
+        "invalid_anonymous_settings",
+        "anonymous_requires_public"
+      ]
+    },
+    {
       "method": "POST",
       "path": "/api/control/v1/apps/{app}/key",
       "requestRequired": [
@@ -336,7 +375,7 @@
     "newCredentialDirectory": "~/.config/cellapp/",
     "legacyCredentialDirectory": "~/.config/ohmyapp/"
   },
-  "accessSemantics": "Visitors sign in to Cellapp. Restricted apps require a user-bound grant from owner approval or access-key redemption. Key rotation stops new redemption and preserves existing grants; anonymous key cookies no longer authorize access.",
+  "accessSemantics": "Visitors sign in to Cellapp unless a public app explicitly enables anonymous pages. Anonymous data read and insert also require app and table permission; insert additionally requires the operator switch. Restricted apps require a user-bound grant from owner approval or access-key redemption. Key rotation stops new redemption and preserves existing grants.",
   "appHost": {
     "currentUser": {
       "method": "GET",
@@ -362,7 +401,7 @@
         "PATCH",
         "DELETE"
       ],
-      "description": "PostgREST table-only subset behind mandatory app login, admission and per-table RLS. Client apikey is a non-secret publishable identifier and does not authorize."
+      "description": "PostgREST table-only subset behind app admission and per-table RLS. Anonymous GET/HEAD and POST insert require separate app and table gates; anonymous PATCH/DELETE are denied. Client apikey is a non-secret publishable identifier and does not authorize."
     },
     "unsupported": [
       "Supabase Auth",
@@ -400,6 +439,8 @@
       "all-admitted-users",
       "own-rows"
     ],
+    "anonymousPolicyModes": ["none", "all"],
+    "anonymousPolicyFields": ["anonymousSelect", "anonymousInsert"],
     "destructiveFlag": "allowDestructive must be true in the manifest and --allow-destructive must be supplied to CLI apply after plan review."
   }
 }

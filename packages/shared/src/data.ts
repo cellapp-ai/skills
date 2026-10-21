@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 export type DataColumn = { name: string; type: 'text' | 'uuid' | 'bigint' | 'boolean' | 'timestamptz' | 'jsonb'; nullable?: boolean };
 export type DataIndex = { columns: string[]; unique?: boolean };
 export type DataMode = 'none' | 'all-admitted-users' | 'own-rows';
-export type DataPolicies = { select?: DataMode; insert?: DataMode; update?: DataMode; delete?: DataMode; ownerColumn?: string };
+export type DataPolicies = { select?: DataMode; insert?: DataMode; update?: DataMode; delete?: DataMode; ownerColumn?: string; anonymousSelect?: 'none' | 'all'; anonymousInsert?: 'none' | 'all' };
 export type DataTable = { name: string; columns: DataColumn[]; primaryKey: string[]; indexes?: DataIndex[]; policies: DataPolicies };
 export type DataManifest = { version: number; allowDestructive?: boolean; tables: DataTable[] };
 
@@ -59,8 +59,13 @@ export function parseDataManifest(input: unknown): DataManifest {
       if (indexColumns.some(column => !columnNames.has(column)) || (index.unique !== undefined && typeof index.unique !== 'boolean')) throw new Error('Invalid data index');
       return {columns: indexColumns, ...(index.unique === undefined ? {} : {unique: index.unique})};
     });
-    const policies = object(table.policies, ['select', 'insert', 'update', 'delete', 'ownerColumn']);
-    const parsedPolicies: DataPolicies = {select: mode(policies.select), insert: mode(policies.insert), update: mode(policies.update), delete: mode(policies.delete)};
+    const policies = object(table.policies, ['select', 'insert', 'update', 'delete', 'ownerColumn', 'anonymousSelect', 'anonymousInsert']);
+    for (const key of ['anonymousSelect', 'anonymousInsert']) {
+      if (policies[key] !== undefined && policies[key] !== 'none' && policies[key] !== 'all') throw new Error('Invalid anonymous data policy');
+    }
+    const parsedPolicies: DataPolicies = {select: mode(policies.select), insert: mode(policies.insert), update: mode(policies.update), delete: mode(policies.delete),
+      ...(policies.anonymousSelect === undefined ? {} : {anonymousSelect: policies.anonymousSelect as 'none' | 'all'}),
+      ...(policies.anonymousInsert === undefined ? {} : {anonymousInsert: policies.anonymousInsert as 'none' | 'all'})};
     const ownRows = Object.values(parsedPolicies).includes('own-rows');
     if (ownRows) {
       if (typeof policies.ownerColumn !== 'string') throw new Error('own-rows requires an owner column');

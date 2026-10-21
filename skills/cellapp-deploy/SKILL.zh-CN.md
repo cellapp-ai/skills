@@ -39,6 +39,8 @@ npm exec --yes --package=@cellapp/cli@latest -- cellapp --help
 
 有版本且不包含秘密的 [`cellapp.data.json`](examples/notes/cellapp.data.json) 清单定义数据表、列、主键、索引和操作策略。类型包括 `text`、`uuid`、`bigint`、`boolean`、`timestamptz`、`jsonb`。策略模式包括 `none`（默认）、`all-admitted-users`、`own-rows`。`own-rows` 模式需要非空的文本型 `ownerColumn`；读写操作会与已登录的应用用户 ID 比对。每张表都需要主键。清单中不能包含 SQL、函数、触发器、数据库密码或提供方身份。表名按应用隔离：一个应用可以定义 `users`，而不影响平台用户或其他应用的同名表。它只是普通应用数据，不是平台身份来源。同一应用内名称必须唯一；`rpc` 为未支持的 PostgREST 路由保留，PostgreSQL 系统列名不可用，生成的索引名也不能与表名冲突。应用前用 `data plan` 检查这些规则。
 
+公开表单只给目标表增加 `policies.anonymousInsert: "all"`；确实允许访客读取记录时才增加 `anonymousSelect: "all"`。未填写即拒绝匿名访问。应用新版清单后，所有者运行 `cellapp anonymous set <app-id> --pages true --read false --write true`，或在控制台设置；运维仍须单独开启匿名提交总开关。用 `cellapp anonymous get <app-id>` 查看实际状态。用未登录浏览器打开页面并提交一次，确认仅新增的响应不包含行内容，匿名 GET/PATCH/DELETE 和错误 Origin 的 POST 均被拒绝。页面中不得放数据库凭证或高权限 JWT。
+
 新项目先完成首次静态部署，以便在 `cellapp.json` 中建立应用关联。先构建并部署一次前端，然后使用已关联的应用和配置的来源应用数据清单。验证成功前，不要报告依赖数据表的页面已准备就绪：
 
 ```sh
