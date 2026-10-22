@@ -7,7 +7,7 @@
     "build": "npm run typecheck && esbuild app.ts index.html --bundle --format=esm --platform=browser --target=es2022 --outdir=dist --loader:.html=copy"
   },
   "dependencies": {
-    "@cellapp/sdk": "file:../../../../packages/sdk"
+    "@cellapp/sdk": "0.1.0"
   },
   "devDependencies": {
     "esbuild": "0.28.2",
