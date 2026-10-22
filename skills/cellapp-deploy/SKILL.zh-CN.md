@@ -56,7 +56,7 @@ npm exec --yes --package=@cellapp/cli@latest -- cellapp data verify --project <p
 
 ## 连接静态前端
 
-对已声明支持的表操作子集使用 `@supabase/supabase-js@2.117.3`。按以下方式初始化：`createClient(window.location.origin, 'cellapp-public', {auth: {autoRefreshToken: false, persistSession: false, detectSessionInUrl: false}})`。公开字符串不是秘密，也不授予任何权限。Cellapp 对每个请求检查已登录用户的仅限应用主机的会话和准入权限。通过同源凭证请求 `/_cellapp/me`，获取稳定的应用范围用户 ID；不要暴露或推导全局 Cellapp ID。可参考包含构建、清单和浏览器 CRUD 页面的[可运行笔记示例](examples/notes/README.md)。
+应用前端使用官方 `@cellapp/sdk` 获取当前应用用户及已声明支持的表操作。于 Cellapp 发布的 HTML 页面中调用 `createCellappClient()`，再用 `currentUser()` 获取稳定的应用范围用户 ID；`from(table)` 仅使用文档列出的 select/insert/update/delete、eq、order、range 和写后 select。应用域公开接口统一在 `/_cellapp/` 下，包括 `/_cellapp/me` 和 `/_cellapp/db/{table}`；应用代码不要直接请求 `/rest/v1`。SDK 使用应用域会话及构建时固定的 API 契约，不提供 Supabase Auth、Realtime、Storage、Functions、RPC 或数据库直连。不要暴露或推导全局 Cellapp ID，也不要把所有者凭证写进前端。未显式选择版本时，CLI 把平台当前默认稳定契约写入输出 HTML；项目或 `--api-version` 可选择受支持的 `major.minor` 或等价的 `yymmdd` 别名。不带版本的直接请求走最新版；静态回滚恢复旧 HTML 中固化的版本。开发和排障时阅读[API 版本说明](https://cellapp.ai/deploy/api-versions.zh-CN.md)与[changelog](https://cellapp.ai/deploy/api-changelog.md)。可参考[可运行笔记示例](examples/notes/README.md)。
 
 只使用 `.from(table).select(columns)`、`.insert(values)`、`.update(values)`、`.delete()`、`.eq()`、`.order()`、`.range()`，以及写入后用于返回记录的 `.select()`。明确处理 `{data,error}` 与 401/403 状态。本期不支持 Supabase Auth、Realtime、Storage、RPC、Edge Functions、联表、任意过滤器、直连数据库或自定义应用服务器。网关忽略客户端传入的授权和 profile 请求头。公开应用允许任何已登录 Cellapp 用户进入，但数据表仍受策略控制。受限应用在登录后还需要所有者批准或兑换访问密钥。
 

@@ -1,6 +1,6 @@
 {
   "name": "@cellapp/cli",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Cellapp static application deployment CLI and Agent Skill",
   "type": "module",
   "license": "MIT",
@@ -10,7 +10,8 @@
   },
   "workspaces": [
     "packages/cli",
-    "packages/shared"
+    "packages/shared",
+    "packages/sdk"
   ],
   "engines": {
     "node": ">=22.12.0"
@@ -29,8 +30,8 @@
     "NOTICE"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "tsc -p tsconfig.json && npm run build --workspace @cellapp/sdk",
+    "typecheck": "tsc -p tsconfig.json --noEmit && npm run typecheck --workspace @cellapp/sdk",
     "test": "node --import tsx --test tests/*.test.ts",
     "cli": "tsx packages/cli/src/main.ts",
     "check:boundary": "node scripts/check-boundary.mjs",

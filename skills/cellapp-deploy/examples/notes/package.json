@@ -7,7 +7,7 @@
     "build": "npm run typecheck && esbuild app.ts index.html --bundle --format=esm --platform=browser --target=es2022 --outdir=dist --loader:.html=copy"
   },
   "dependencies": {
-    "@supabase/supabase-js": "2.117.3"
+    "@cellapp/sdk": "file:../../../../packages/sdk"
   },
   "devDependencies": {
     "esbuild": "0.28.2",

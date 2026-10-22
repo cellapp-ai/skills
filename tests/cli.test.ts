@@ -140,6 +140,7 @@ test('new-origin credential is shared across projects but cannot replace an app 
     await saveJSON(join(project, 'cellapp.json'), association);
     let created = false;
     second.request = async (path: string, method = 'GET') => {
+      if (path === '/api/control/v1/app-api/versions') return {stable: '1.1', latest: '1.1', versions: [{version: '1.1', date: '261022', status: 'supported'}]} as never;
       if (path === '/api/control/v1/limits') return {files: 10, fileBytes: 1000, deploymentBytes: 1000} as never;
       if (path === '/api/control/v1/apps' && method === 'GET') return [] as never;
       if (path === '/api/control/v1/apps' && method === 'POST') created = true;

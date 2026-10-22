@@ -4,7 +4,7 @@
     "package.json", "package-lock.json", "tsconfig.json", "public-boundary.json"
   ],
   "allowedPrefixes": [
-    "packages/cli/", "packages/shared/", "skills/cellapp-deploy/",
+    "packages/cli/", "packages/shared/", "packages/sdk/", "skills/cellapp-deploy/",
     "tests/", "contracts/", "scripts/", ".github/workflows/"
   ],
   "forbiddenPrefixes": [

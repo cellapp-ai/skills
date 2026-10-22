@@ -78,6 +78,13 @@
     },
     {
       "method": "GET",
+      "path": "/api/control/v1/app-api/versions",
+      "successStatus": 200,
+      "responseRequired": ["stable", "latest", "versions"],
+      "errors": ["authorization_required"]
+    },
+    {
+      "method": "GET",
       "path": "/api/control/v1/apps",
       "successStatus": 200,
       "responseType": "array",
@@ -393,7 +400,7 @@
       ]
     },
     "data": {
-      "path": "/rest/v1/{table}",
+      "path": "/_cellapp/db/{table}",
       "methods": [
         "GET",
         "HEAD",

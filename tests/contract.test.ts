@@ -13,7 +13,7 @@ const contract = JSON.parse(await readFile(new URL('../contracts/http-v3.json', 
 
 test('v3 retains all 17 v2 operations with canonical paths and unchanged results', async () => {
   const previous = JSON.parse(await readFile(new URL('../contracts/http-v2.json', import.meta.url), 'utf8')) as {operations: Operation[]};
-  assert.equal(contract.operations.length, 19);
+  assert.equal(contract.operations.length, 20);
   assert.equal(previous.operations.length, 17);
   for (const old of previous.operations) {
     const path = old.path === '/device-authorizations' ? '/auth/device'
@@ -58,6 +58,7 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
     else if (path === '/auth/device/poll') data = {token: 'credential', credentialId: 'c'.repeat(32), expiresIn: 100};
     else if (path === '/auth/credentials/current') data = {revoked: true};
     else if (path === '/api/control/v1/limits') data = {files: 10, fileBytes: 1000, deploymentBytes: 1000, monthlyVisitors: 1000};
+    else if (path === '/api/control/v1/app-api/versions') data = {stable: '1.1', latest: '1.1', versions: [{version: '1.1', date: '261022', status: 'supported'}]};
     else if (path === '/api/control/v1/apps' && method === 'GET') data = app ? [app] : [];
     else if (path === '/api/control/v1/apps' && method === 'POST') {
       assert.equal(body.namespace, 'demo');
@@ -110,13 +111,17 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
     await mkdir(join(project, 'dist'), {recursive: true});
     await writeFile(join(project, 'dist', 'index.html'), '<h1>First</h1>');
     await assert.rejects(deploy(client, project, {output: 'dist', namespace: 'demo', slug: 'test'}, () => {}), error => error instanceof AppError && error.code === 'app_data_not_ready');
-    const saved = JSON.parse(await readFile(join(project, 'cellapp.json'), 'utf8')) as {appId: string; createRequestId: string};
+    const saved = JSON.parse(await readFile(join(project, 'cellapp.json'), 'utf8')) as {appId: string; createRequestId: string; apiVersion?: string};
     assert.equal(saved.appId, appId);
+    assert.equal(saved.apiVersion, undefined);
     assert.ok(!(await readFile(join(project, 'cellapp.json'), 'utf8')).includes(createdKey));
     const keyPath = `${client.credentialFile}.create-${saved.createRequestId}`;
     assert.equal((await stat(keyPath)).mode & 0o777, 0o600);
     const first = await deploy(client, project, {}, () => {});
     assert.equal(first.status, 'published');
+    assert.equal(first.apiVersion, '1.1');
+    assert.equal(first.apiDate, '261022');
+    assert.match(await readFile(join(project, 'dist', 'index.html'), 'utf8'), /cellapp-api-version" content="1\.1"/);
     assert.equal(first.aliasUrl, 'https://control.example/a/demo/test');
     assert.ok('accessKey' in first);
     assert.equal(first.accessKey, createdKey);
@@ -135,8 +140,15 @@ test('public HTTP contract covers CLI login, deployment, management and retry', 
     const retry = await deploy(client, project, {}, () => {});
     assert.equal(retry.status, 'published');
     assert.equal(retry.url, first.url);
+    await assert.rejects(deploy(client, project, {apiVersion: '2.0'}, () => {}), error => error instanceof AppError && error.code === 'unsupported_api_version');
+    await writeFile(join(project, 'dist', 'index.html'), '<h1>Explicit version</h1>');
+    const fixed = await deploy(client, project, {apiVersion: '261022'}, () => {});
+    assert.equal(fixed.apiVersion, '1.1');
+    assert.equal(fixed.apiDate, '261022');
+    assert.equal((JSON.parse(await readFile(join(project, 'cellapp.json'), 'utf8')) as {apiVersion: string}).apiVersion, '261022');
+    assert.match(await readFile(join(project, 'dist', 'index.html'), 'utf8'), /cellapp-api-version" content="1\.1"/);
     await assert.rejects(deploy(client, project, {slug: 'changed'}, () => {}), /only when creating/);
-    assert.equal(deploymentNumber, 2);
+    assert.equal(deploymentNumber, 3);
     await writeFile(join(project, 'cellapp.data.json'), JSON.stringify({version: 1, tables: [{name: 'notes', columns: [{name: 'id', type: 'uuid'}, {name: 'body', type: 'text'}], primaryKey: ['id'], policies: {select: 'all-admitted-users', insert: 'all-admitted-users'}}]}));
     const association = {appId, origin: client.origin, name: 'Test', output: 'dist', spa: false, createRequestId: 'b'.repeat(32)};
     assert.ok((await runData(client, 'plan', project, association)));

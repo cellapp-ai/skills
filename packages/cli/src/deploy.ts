@@ -6,11 +6,12 @@ import { manifest, sha256, validPath, type Entry, type Limits } from '../../shar
 import { AppError, ensure } from '../../shared/src/errors.js';
 import { Client, randomKey, requestID, saveJSON, readJSON } from './client.js';
 import { readProject } from './project.js';
+import {resolveAPIVersion, stampAPIOutput} from './api-version.js';
 
 export interface Project {
-  origin: string; appId?: string; name: string; namespace?: string; slug?: string; output: string; build?: string; spa: boolean;
+  origin: string; appId?: string; name: string; namespace?: string; slug?: string; output: string; build?: string; spa: boolean; apiVersion?: string;
   createRequestId: string;
-  pending?: {requestId: string; fingerprint: string; baseVersion: string | null};
+  pending?: {requestId: string; fingerprint: string; baseVersion: string | null; apiVersion?: string};
 }
 interface App {id: string; url: string; namespace: string; slug: string; aliasUrl: string; activeDeployment: string | null; dataState: string}
 export async function build(command: string | undefined, project: string) {
@@ -44,7 +45,7 @@ export async function collect(output: string, limits: Limits): Promise<Entry[]> 
   await visit(root);
   return manifest(files, limits);
 }
-export async function deploy(client: Client, directory: string, options: {output?: string; build?: string; name?: string; namespace?: string; slug?: string; spa?: boolean}, notify: (s: string) => void) {
+export async function deploy(client: Client, directory: string, options: {output?: string; build?: string; name?: string; namespace?: string; slug?: string; spa?: boolean; apiVersion?: string}, notify: (s: string) => void) {
   const projectPath = resolve(directory);
   const configPath = join(projectPath, 'cellapp.json');
   let project = await readProject(projectPath, client.origin);
@@ -58,14 +59,16 @@ export async function deploy(client: Client, directory: string, options: {output
   const rel = relative(projectPath, outPath);
   ensure(!isAbsolute(rel) && !rel.startsWith('..'), 400, 'invalid_output', 'Output must be inside the project');
   const command = options.build ?? project?.build;
+  const selected = await resolveAPIVersion(client, options.apiVersion ?? project?.apiVersion ?? project?.pending?.apiVersion);
   await build(command, projectPath);
   const actualOutput = await realpath(outPath);
   const actualProject = await realpath(projectPath);
   const actualRelative = relative(actualProject, actualOutput);
   ensure(!isAbsolute(actualRelative) && actualRelative !== '..' && !actualRelative.startsWith('../'), 400, 'invalid_output', 'Output resolves outside the project');
+  await stampAPIOutput(outPath, selected.version);
   const limits = await client.request<Limits>(`${CONTROL_API}/limits`);
   const files = await collect(outPath, limits);
-  project = {...project, origin: client.origin, name: options.name ?? project?.name ?? 'My app', namespace: options.namespace ?? project?.namespace, slug: options.slug ?? project?.slug, output, build: command, spa: options.spa ?? project?.spa ?? false, createRequestId: project?.createRequestId ?? requestID()};
+  project = {...project, origin: client.origin, name: options.name ?? project?.name ?? 'My app', namespace: options.namespace ?? project?.namespace, slug: options.slug ?? project?.slug, output, build: command, spa: options.spa ?? project?.spa ?? false, createRequestId: project?.createRequestId ?? requestID(), ...(options.apiVersion === undefined ? {} : {apiVersion: options.apiVersion})};
   const keyPath = `${client.credentialFile}.create-${project.createRequestId}`;
   let initialKey = (await readJSON<{key: string}>(keyPath))?.key;
   if (initialKey) ensure(/^[a-f0-9]{64}$/.test(initialKey), 400, 'invalid_state', 'Pending application key is invalid');
@@ -96,7 +99,7 @@ export async function deploy(client: Client, directory: string, options: {output
   if (app.dataState !== 'ready') await client.request(`${controlApp(app.id)}/data/reconcile`, 'POST', {});
   const fingerprint = sha256(JSON.stringify({files, spa: project.spa}));
   if (project.pending && project.pending.fingerprint !== fingerprint) project.pending = undefined;
-  project.pending ??= {requestId: requestID(), fingerprint, baseVersion: app.activeDeployment};
+  project.pending ??= {requestId: requestID(), fingerprint, baseVersion: app.activeDeployment, apiVersion: selected.version};
   await saveJSON(configPath, project);
   const base = `${controlApp(app.id)}/deployments`;
   const d = await client.request<{id: string}>(base, 'POST', {manifest: files, requestId: project.pending.requestId, baseVersion: project.pending.baseVersion, spa: project.spa});
@@ -116,6 +119,6 @@ export async function deploy(client: Client, directory: string, options: {output
   await saveJSON(configPath, project);
   if (initialKey) await unlink(keyPath);
   notify('静态应用已发布。');
-  return {...result, namespace: app.namespace, slug: app.slug, aliasUrl: app.aliasUrl,
+  return {...result, namespace: app.namespace, slug: app.slug, aliasUrl: app.aliasUrl, apiVersion: selected.version, apiDate: selected.date,
     ...(initialKey ? {accessKey: initialKey} : {keyUnchanged: true})};
 }

@@ -27,6 +27,10 @@
     "build": {
       "type": "string"
     },
+    "apiVersion": {
+      "type": "string",
+      "pattern": "^(?:[1-9][0-9]*\\.[0-9]+|[0-9]{6})$"
+    },
     "spa": {
       "type": "boolean"
     },
@@ -55,6 +59,10 @@
             "string",
             "null"
           ]
+        },
+        "apiVersion": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*\\.[0-9]+$"
         }
       },
       "additionalProperties": false

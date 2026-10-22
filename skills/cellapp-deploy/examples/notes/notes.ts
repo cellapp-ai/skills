@@ -1,15 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
+import { createCellappClient } from '@cellapp/sdk';
 
-const client = createClient(window.location.origin, 'cellapp-public', {
-  auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
-});
+const client = createCellappClient();
 
 export async function currentAppUser(): Promise<string> {
-  const response = await fetch('/_cellapp/me', { credentials: 'same-origin' });
-  if (!response.ok) throw new Error(response.status === 401 ? 'Sign in to Cellapp' : 'Application access required');
-  const value: unknown = await response.json();
-  if (!value || typeof value !== 'object' || !('id' in value) || typeof value.id !== 'string') throw new Error('Invalid application identity');
-  return value.id;
+  return (await client.currentUser()).id;
 }
 
 export async function addNote(body: string) {

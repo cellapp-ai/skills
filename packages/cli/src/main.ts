@@ -12,7 +12,7 @@ import { checkForUpdates } from './update.js';
 
 const {values, positionals} = parseArgs({allowPositionals: true, options: {
   origin: {type: 'string'}, project: {type: 'string', default: '.'}, output: {type: 'string'},
-  build: {type: 'string'}, name: {type: 'string'}, namespace: {type: 'string'}, slug: {type: 'string'}, spa: {type: 'boolean'}, help: {type: 'boolean'},
+  build: {type: 'string'}, name: {type: 'string'}, namespace: {type: 'string'}, slug: {type: 'string'}, spa: {type: 'boolean'}, help: {type: 'boolean'}, 'api-version': {type: 'string'},
   'config-dir': {type: 'string'},
   manifest: {type: 'string'}, 'allow-destructive': {type: 'boolean'},
   pages: {type: 'string'}, read: {type: 'string'}, write: {type: 'string'},
@@ -22,7 +22,7 @@ const notify = (s: string) => process.stderr.write(s + '\n');
 try {
   await checkForUpdates(values['config-dir'], notify);
   if (values.help || !command) {
-    process.stdout.write('cellapp <login|logout|deploy|apps|link|reset-key|delete|data|anonymous> [app-id] [--origin https://cellapp.ai]\nDeploy: --project . --output dist [--build "npm run build"] [--namespace user-slug] [--slug app-slug] [--spa]\nLink: link <app-id> --project . --output dist\nData: data <plan|apply|status|verify|reconcile> [app-id] --project . [--manifest cellapp.data.json] [--allow-destructive]\nAnonymous: anonymous <get|set> <app-id> [--pages true|false --read true|false --write true|false]\nDefault origin: https://cellapp.ai\n');
+    process.stdout.write('cellapp <login|logout|deploy|apps|link|reset-key|delete|data|anonymous> [app-id] [--origin https://cellapp.ai]\nDeploy: --project . --output dist [--build "npm run build"] [--namespace user-slug] [--slug app-slug] [--spa] [--api-version 1.1|261022]\nLink: link <app-id> --project . --output dist\nData: data <plan|apply|status|verify|reconcile> [app-id] --project . [--manifest cellapp.data.json] [--allow-destructive]\nAnonymous: anonymous <get|set> <app-id> [--pages true|false --read true|false --write true|false]\nDefault origin: https://cellapp.ai\n');
   } else {
     const projectPath = resolve(values.project);
     const newProject = await readJSON<Project>(join(projectPath, 'cellapp.json'));
@@ -39,7 +39,7 @@ try {
     else {
       if (!client.token) await client.login(notify);
       let result: unknown;
-      if (command === 'deploy') result = await deploy(client, projectPath, values, notify);
+      if (command === 'deploy') result = await deploy(client, projectPath, {...values, apiVersion: values['api-version']}, notify);
       else if (command === 'apps') result = await client.request(`${CONTROL_API}/apps`);
       else if (command === 'data') result = await runData(client, appId, projectPath, project, dataAppId, values.manifest, values['allow-destructive']);
       else if (command === 'anonymous') {
