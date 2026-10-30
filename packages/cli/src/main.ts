@@ -9,22 +9,33 @@ import { readProject } from './project.js';
 import { selectOrigin } from './origin.js';
 import { runData } from './data.js';
 import { checkForUpdates } from './update.js';
+import { diagnoseCellapp, formatDoctorReport } from './doctor.js';
+import { setSelectedAgent } from './agent-selection.js';
 
 const {values, positionals} = parseArgs({allowPositionals: true, options: {
-  origin: {type: 'string'}, project: {type: 'string', default: '.'}, output: {type: 'string'},
+  origin: {type: 'string'}, project: {type: 'string'}, output: {type: 'string'},
   build: {type: 'string'}, name: {type: 'string'}, namespace: {type: 'string'}, slug: {type: 'string'}, spa: {type: 'boolean'}, help: {type: 'boolean'}, 'api-version': {type: 'string'},
   'config-dir': {type: 'string'},
   manifest: {type: 'string'}, 'allow-destructive': {type: 'boolean'},
   pages: {type: 'string'}, read: {type: 'string'}, write: {type: 'string'},
+  json: {type: 'boolean'},
 }});
 const [command, appId, dataAppId] = positionals;
 const notify = (s: string) => process.stderr.write(s + '\n');
 try {
-  await checkForUpdates(values['config-dir'], notify);
+  if (command !== 'doctor' && command !== 'set') await checkForUpdates(values['config-dir'], notify);
   if (values.help || !command) {
-    process.stdout.write('cellapp <login|logout|deploy|apps|link|reset-key|delete|data|anonymous> [app-id] [--origin https://cellapp.ai]\nDeploy: --project . --output dist [--build "npm run build"] [--namespace user-slug] [--slug app-slug] [--spa] [--api-version 1.1|261022]\nLink: link <app-id> --project . --output dist\nData: data <plan|apply|status|verify|reconcile> [app-id] --project . [--manifest cellapp.data.json] [--allow-destructive]\nAnonymous: anonymous <get|set> <app-id> [--pages true|false --read true|false --write true|false]\nDefault origin: https://cellapp.ai\n');
+    process.stdout.write('cellapp <login|logout|deploy|apps|link|reset-key|delete|data|anonymous|doctor|set> [app-id] [--origin https://cellapp.ai]\nDeploy: --project . --output dist [--build "npm run build"] [--namespace user-slug] [--slug app-slug] [--spa] [--api-version 1.1|261022|1.2|261027]\nLink: link <app-id> --project . --output dist\nData: data <plan|apply|status|verify|reconcile> [app-id] --project . [--manifest cellapp.data.json] [--allow-destructive]\nAnonymous: anonymous <get|set> <app-id> [--pages true|false --read true|false --write true|false]\nDoctor: doctor [--project PATH] [--json]\nSelect local coding Agent: set agent <codex|claude|cursor>\nDefault origin: https://cellapp.ai\n');
+  } else if (command === 'doctor') {
+    if (appId || dataAppId) throw new Error('Use cellapp doctor [--project PATH] [--json]');
+    const origin = selectOrigin(values.origin, undefined, undefined, process.env);
+    const report = await diagnoseCellapp({origin, configDirectory: values['config-dir'], project: values.project});
+    process.stdout.write(values.json ? JSON.stringify(report, null, 2) + '\n' : formatDoctorReport(report));
+  } else if (command === 'set') {
+    if (appId !== 'agent' || !dataAppId || positionals.length !== 3) throw new Error('Use cellapp set agent <codex|claude|cursor>');
+    process.stdout.write(JSON.stringify(await setSelectedAgent(dataAppId, values['config-dir']), null, 2) + '\n');
   } else {
-    const projectPath = resolve(values.project);
+    const projectPath = resolve(values.project ?? '.');
     const newProject = await readJSON<Project>(join(projectPath, 'cellapp.json'));
     const legacyProject = await readJSON<Project>(join(projectPath, 'ohmyapp.json'));
     const origin = selectOrigin(values.origin, newProject, legacyProject, process.env);

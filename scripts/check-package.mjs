@@ -7,7 +7,7 @@ for (const required of ['LICENSE', 'README.md', 'NOTICE', 'package.json', 'skill
   if (!paths.includes(required)) throw new Error(`Package missing ${required}`);
 }
 for (const path of paths) {
-  if (path.startsWith('apps/') || path.startsWith('infra/') || path.startsWith('openspec/') || path.endsWith('.env')) {
+  if (path.startsWith('apps/') || path.startsWith('infra/') || path.startsWith('openspec/') || path.includes('/.venv/') || path.endsWith('.env')) {
     throw new Error(`Private path in package: ${path}`);
   }
 }

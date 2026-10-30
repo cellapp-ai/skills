@@ -50,7 +50,19 @@ An existing `ohmyapp.json` and matching `~/.config/ohmyapp/` credential are copi
 
 The service hosts static content only. Frontend code and bundled values are readable by authorized visitors; never include private API credentials. Browser local-only data is not synchronized between devices; managed table data is.
 
-## Development
+## Local setup with an existing coding Agent
+
+The current version uses a coding Agent you already have on this computer. `cellapp doctor` reads local prerequisites and reports next steps without modifying the project, installing an Agent, signing in, or uploading local choices. Use `--project /absolute/project` to inspect a specific static project; without it, no project is scanned. `--json` provides structured results. A missing or uncertain Agent login is reported as `unknown` unless its own status command confirms it.
+
+```sh
+cellapp doctor
+cellapp doctor --project /absolute/project --json
+cellapp set agent codex
+```
+
+`cellapp set agent` also accepts `claude` or `cursor`. It saves only an installed supported CLI name in a private local preference; it does not run that CLI. Sign in through the selected Agent's own flow, then ask it to follow [the Cellapp deployment Skill](skills/cellapp-deploy/SKILL.md) for the project. You can also follow the Skill's project, authorization, build and deployment steps manually with the CLI. Browser approval authorizes the Cellapp deployment tool, independently of the coding Agent's own login. No device pairing or remote coding is available in this release.
+
+If offline, run `cellapp doctor` again when the service is reachable. If it reports an expired Cellapp login, run `cellapp login` and approve the new code in your browser. If an Agent login is `unknown`, check with that Agent's own command. If the project has no static output, build it locally and confirm the directory containing `index.html`. The same commands are intended for macOS, Windows and Linux; Windows real-machine acceptance remains pending.
 
 ```sh
 npm ci

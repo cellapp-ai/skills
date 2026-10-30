@@ -9,6 +9,10 @@ description: 从用户项目开发、更新并部署静态 Cellapp 应用。按�
 
 部署和数据表操作使用官方 `cellapp` 客户端。新版客户端通过 `/auth/device` 请求浏览器批准，并使用 `/api/control/v1/*` 管理资源；旧版客户端的根路径在迁移期继续可用。请运行 CLI 命令，不自行拼接 HTTP 请求。Agent 自行获取并运行客户端；用户只需安装本 Skill。公开的 [Agent 部署指引](https://cellapp.ai/deploy/AGENTS.zh-CN.md) 提供简要部署流程；本 Skill 更详细地说明数据和失败恢复。如果用户或环境提供自定义来源，就使用该来源；否则客户端默认连接 `https://cellapp.ai`，并迁移来源恰好为 `https://console.cellapp.ai` 的项目关联。旧来源需要重新进行浏览器授权，旧令牌不会被复制。保留 `ohmyapp.json` 和 `OHMYAPP_ORIGIN` 的兼容行为。不要虚构其他来源，也不要把凭证存入项目。
 
+## 建立本机环境
+
+可以使用用户已安装的编码 Agent，也可以在终端手动执行本文步骤。匹配版本的 Cellapp CLI 可用后，运行 `cellapp doctor` 检查 Node/npm、本地 Cellapp 登录、服务连通以及受支持编码 Agent 的安装与登录状态；只在用户指定项目时加 `--project <项目目录>`。`cellapp doctor --json` 提供结构化结果。用户或其本地 Agent 可以运行 `cellapp set agent codex`、`cellapp set agent claude` 或 `cellapp set agent cursor`，仅在本机保存已安装 CLI 的首选名称。这不会登录、运行编码 Agent 或批准部署。登录状态无法确认时，使用对应 Agent 自己的登录流程，不读取其凭证文件。即使没有编码 Agent，也可按下文完成浏览器授权、构建与部署。首版没有设备配对和远程编码。
+
 ## 运行已发布客户端
 
 确认 Node.js 至少为 22.12，且 npm 可用。在项目目录中验证官方已发布的包：

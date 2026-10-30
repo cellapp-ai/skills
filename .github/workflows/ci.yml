@@ -25,3 +25,18 @@ jobs:
           node "$RUNNER_TEMP/cellapp-smoke/node_modules/@cellapp/cli/dist/packages/cli/src/main.js" --help
           cmp skills/cellapp-deploy/SKILL.md "$RUNNER_TEMP/cellapp-smoke/node_modules/@cellapp/cli/skills/cellapp-deploy/SKILL.md"
       - run: npx --yes skills@1.5.26 add . --list
+  local-setup-desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.12.0'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck
+      - run: node --import tsx --test tests/agent-doctor.test.ts tests/local-setup.test.ts

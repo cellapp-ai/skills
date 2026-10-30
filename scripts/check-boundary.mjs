@@ -15,7 +15,7 @@ async function checkDirectory(directory) {
   const failures = [];
   async function visit(at) {
     for (const entry of await readdir(at, {withFileTypes: true})) {
-      if (entry.name === '.git' || entry.name === 'node_modules' || entry.name === 'dist') continue;
+      if (entry.name === '.git' || entry.name === 'node_modules' || entry.name === 'dist' || entry.name === '.venv') continue;
       const full = join(at, entry.name);
       const path = relative(directory, full).split(sep).join('/');
       if (entry.isSymbolicLink()) { failures.push(`symlink: ${path}`); continue; }

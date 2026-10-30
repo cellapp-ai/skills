@@ -80,3 +80,56 @@ test('SDK reports missing versions and access errors without falling back to lat
     if (beforeLocation) Object.defineProperty(globalThis, 'location', beforeLocation); else Reflect.deleteProperty(globalThis, 'location');
   }
 });
+
+test('SDK model calls use pinned 1.2, preserve error categories and reject interrupted streams', async () => {
+  const beforeFetch = globalThis.fetch;
+  const beforeDocument = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  const beforeLocation = Object.getOwnPropertyDescriptor(globalThis, 'location');
+  const modelId = `cellapp:${'a'.repeat(32)}:model-one`;
+  const seen: Request[] = [];
+  try {
+    Object.defineProperty(globalThis, 'location', {configurable: true, value: {protocol: 'https:', origin: 'https://agent.apps.example'}});
+    Object.defineProperty(globalThis, 'document', {configurable: true, value: {querySelectorAll: () => [{getAttribute: () => '1.2'}]}});
+    let mode: 'text' | 'stream' | 'broken' | 'denied' = 'text';
+    globalThis.fetch = async (input, init) => {
+      const request = new Request(input, init);
+      seen.push(request);
+      if (request.url.endsWith('/_cellapp/v1/models')) return new Response(JSON.stringify({object:'list',data:[{id:modelId,object:'model',created:0,owned_by:'Personal provider'}]}));
+      if (mode === 'denied') return new Response(JSON.stringify({error: 'model_authorization_required', message: 'Authorize', details: {authorizeUrl: 'https://cellapp.ai/dashboard/model-consent?app=123'}}), {status: 403});
+      if (mode === 'text') return new Response(JSON.stringify({choices: [{message: {content: 'pong'}}], usage: {prompt_tokens: 3, completion_tokens: 1}}), {headers: {'Content-Type': 'application/json'}});
+      const events = mode === 'stream'
+        ? 'data: {"choices":[{"delta":{"content":"pong"}}]}\n\ndata: [DONE]\n\n'
+        : 'data: {"choices":[{"delta":{"content":"partial"}}]}\n\nevent: error\ndata: {"error":"model_stream_interrupted"}\n\n';
+      return new Response(events, {headers: {'Content-Type': 'text/event-stream'}});
+    };
+    const sdk = createCellappClient();
+    const options = {model:modelId, messages: [{role: 'user' as const, content: 'ping'}]};
+    assert.deepEqual(await sdk.models.list(), [{id:modelId,name:'model-one',provider:'Personal provider'}]);
+    assert.equal((await sdk.chat(options)).choices[0]?.message.content, 'pong');
+    assert.deepEqual((await sdk.chat(options)).usage, {prompt_tokens: 3, completion_tokens: 1});
+    mode = 'stream';
+    const chunks = [];
+    for await (const chunk of sdk.streamChat(options)) chunks.push(chunk);
+    assert.equal(chunks[0]?.choices[0]?.delta.content, 'pong');
+    mode = 'broken';
+    await assert.rejects(async () => { for await (const _ of sdk.streamChat(options)) { /* Consume partial output. */ } },
+      error => error instanceof CellappAPIError && error.code === 'model_stream_interrupted');
+    mode = 'denied';
+    await assert.rejects(sdk.chat(options), error => error instanceof CellappAPIError && error.status === 403 && error.code === 'model_authorization_required');
+    for (const request of seen) {
+      if (request.url.endsWith('/_cellapp/v1/models')) continue;
+      assert.equal(request.url, 'https://agent.apps.example/_cellapp/v1/chat/completions');
+      assert.equal(request.credentials, 'same-origin');
+      assert.equal(request.method, 'POST');
+      assert(!JSON.stringify(await request.clone().json()).includes('connectionId'));
+      assert.equal((await request.clone().json()).model,modelId);
+      assert(!JSON.stringify(await request.clone().json()).includes('provider-secret'));
+    }
+    Object.defineProperty(globalThis, 'document', {configurable: true, value: {querySelectorAll: () => [{getAttribute: () => '1.1'}]}});
+    await assert.rejects(createCellappClient().chat(options), error => error instanceof CellappAPIError && error.code === 'unsupported_api_version');
+  } finally {
+    globalThis.fetch = beforeFetch;
+    if (beforeDocument) Object.defineProperty(globalThis, 'document', beforeDocument); else Reflect.deleteProperty(globalThis, 'document');
+    if (beforeLocation) Object.defineProperty(globalThis, 'location', beforeLocation); else Reflect.deleteProperty(globalThis, 'location');
+  }
+});

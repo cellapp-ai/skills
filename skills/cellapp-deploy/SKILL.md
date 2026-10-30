@@ -9,6 +9,10 @@ description: Develop, update and deploy a static Cellapp app from the user's pro
 
 Use the official `cellapp` client for deployment and table operations. Newer client versions use `/auth/device` for browser-approved login and `/api/control/v1/*` for Bearer management; keep using CLI commands rather than constructing HTTP requests. Older root-path CLI requests remain supported during migration. The Agent obtains and runs it; the user installs only this Skill. The public [Agent deployment instructions](https://cellapp.ai/deploy/AGENTS.md) provide the short deployment path; this Skill covers data and recovery in more detail. Use a custom origin supplied by the user or environment when present; otherwise the client defaults to `https://cellapp.ai` and migrates exact `https://console.cellapp.ai` project associations. The retired origin requires fresh browser authorization and its old token is never copied. Preserve `ohmyapp.json` and `OHMYAPP_ORIGIN` compatibility. Do not invent another origin or store a credential in the project.
 
+## Set up this computer
+
+Use a coding Agent the user has already installed, or follow this Skill manually in a terminal. Once the matching Cellapp CLI version is available, run `cellapp doctor` to inspect Node/npm, Cellapp login and service reachability, and supported Agent CLIs. Add `--project <project>` only for the project the user asks you to inspect. `cellapp doctor --json` is available for structured diagnostics. The user or their local Agent may run `cellapp set agent codex`, `cellapp set agent claude`, or `cellapp set agent cursor` to save a local preference after the CLI is installed. This does not sign in to the Agent, run it, or authorize a deployment. If its login is unknown, ask the user to use that Agent’s own login flow; never read the Agent's credential files. Continue with the authorization and deployment instructions below whether or not a coding Agent is installed. No device pairing or remote development is available in this release.
+
 ## Run the published client
 
 Check Node.js is at least 22.12 and npm is available. In the project directory, verify the official published package with:

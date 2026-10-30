@@ -1,0 +1,27 @@
+{
+  "applicationApiVersion": "1.2",
+  "modelBaseUrl": "/_cellapp/v1",
+  "authentication": "current admitted application visitor session; provider credentials never enter application code",
+  "modelId": "cellapp:<32-character connection id>:<provider model id>",
+  "operations": [
+    {
+      "method": "GET",
+      "path": "/_cellapp/v1/models",
+      "response": "OpenAI list object with data entries containing id, object=model, created, owned_by=provider connection name",
+      "scope": "union of models on provider connections authorized by this visitor for this application",
+      "fallback": "manually configured model id remains listed when provider GET /models fails"
+    },
+    {
+      "method": "POST",
+      "path": "/_cellapp/v1/chat/completions",
+      "required": ["model", "messages"],
+      "optional": ["tools", "stream"],
+      "forbidden": ["connectionId", "apiBase", "apiKey", "userId", "appId"],
+      "response": "supported OpenAI Chat Completions text, SSE, and function-call subset",
+      "authorization": "model namespace identifies a connection; every call checks visitor, application, connection grant, and capability"
+    }
+  ],
+  "planned": [{"method": "POST", "path": "/_cellapp/v1/responses"}],
+  "selection": "@cellapp/sdk models.current() stores the browser-local default; each invocation still sends model",
+  "errors": "OpenAI-shaped error object with Cellapp-specific stable codes and details.authorizeUrl where authorization is required"
+}
